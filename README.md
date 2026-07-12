@@ -2,7 +2,7 @@
 
 A simple starter site for Ewing Woods.
 
-## Gettin Started
+## Getting Started
 
 Open `index.html` in your browser to view the site locally.
 
