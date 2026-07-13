@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Login | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="register.html">Register</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-header">
+    <h1>Parent Login</h1>
+    <p>Save your camper's info once, reuse it every year</p>
+  </div>
+
+  <main>
+    <form id="auth-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required minlength="6">
+
+      <button type="submit" class="btn" id="submit-btn">Log In</button>
+    </form>
+
+    <p style="margin-top: 1rem;">
+      <a href="#" id="toggle-mode">New here? Create an account</a>
+    </p>
+
+    <p id="form-status" role="status"></p>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp &middot; <a href="admin-login.html">Staff Login</a></p>
+  </footer>
+
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    let mode = "login";
+
+    const form = document.getElementById("auth-form");
+    const status = document.getElementById("form-status");
+    const submitBtn = document.getElementById("submit-btn");
+    const toggleLink = document.getElementById("toggle-mode");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) window.location.href = "parent-dashboard.html";
+    });
+
+    toggleLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      mode = mode === "login" ? "signup" : "login";
+      submitBtn.textContent = mode === "login" ? "Log In" : "Create Account";
+      toggleLink.textContent = mode === "login" ? "New here? Create an account" : "Already have an account? Log in";
+      status.textContent = "";
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = form.email.value.trim();
+      const password = form.password.value;
+
+      status.textContent = mode === "login" ? "Logging in..." : "Creating your account...";
+
+      try {
+        if (mode === "login") {
+          await signInWithEmailAndPassword(auth, email, password);
+        } else {
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          await setDoc(doc(db, "parentProfiles", cred.user.uid), {
+            parentEmail: email,
+            parentName: "",
+            parentPhone: ""
+          });
+        }
+        window.location.href = "parent-dashboard.html";
+      } catch (err) {
+        status.textContent = describeError(err.code);
+      }
+    });
+
+    function describeError(code) {
+      switch (code) {
+        case "auth/email-already-in-use":
+          return "That email already has an account. Try logging in instead.";
+        case "auth/invalid-credential":
+        case "auth/wrong-password":
+        case "auth/user-not-found":
+          return "Incorrect email or password.";
+        case "auth/weak-password":
+          return "Password must be at least 6 characters.";
+        default:
+          return "Something went wrong. Please try again.";
+      }
+    }
+  </script>
+</body>
+</html>

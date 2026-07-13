@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Campers | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="#" id="logout-link">Log Out</a></li>
+    </ul>
+  </nav>
+
+  <main class="wide">
+    <h1>My Campers</h1>
+    <p>Save your family's info once, then register each summer in a click.</p>
+
+    <h2>Your Info</h2>
+    <form id="parent-form" style="max-width: 480px;">
+      <label for="parentName">Your name</label>
+      <input type="text" id="parentName" name="parentName">
+
+      <label for="parentEmail">Email</label>
+      <input type="email" id="parentEmail" name="parentEmail" disabled>
+
+      <label for="parentPhone">Phone</label>
+      <input type="tel" id="parentPhone" name="parentPhone">
+
+      <button type="submit" class="btn">Save My Info</button>
+    </form>
+    <p id="parent-status" role="status"></p>
+
+    <h2>Your Campers</h2>
+    <div id="campers-list"></div>
+    <button id="add-camper-btn" class="btn" style="margin-top: 1rem;">+ Add Another Camper</button>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp</p>
+  </footer>
+
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import {
+      doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const TSHIRT_SIZES = ["Youth S", "Youth M", "Youth L", "Adult S", "Adult M", "Adult L", "Adult XL"];
+    const CURRENT_YEAR = 2026;
+
+    const parentForm = document.getElementById("parent-form");
+    const parentStatus = document.getElementById("parent-status");
+    const campersList = document.getElementById("campers-list");
+    const addCamperBtn = document.getElementById("add-camper-btn");
+
+    let currentUser = null;
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "parent-login.html";
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "parent-login.html";
+        return;
+      }
+      currentUser = user;
+      await loadParentInfo();
+      await loadCampers();
+    });
+
+    async function loadParentInfo() {
+      const snap = await getDoc(doc(db, "parentProfiles", currentUser.uid));
+      const data = snap.exists() ? snap.data() : {};
+      parentForm.parentName.value = data.parentName || "";
+      parentForm.parentEmail.value = currentUser.email;
+      parentForm.parentPhone.value = data.parentPhone || "";
+    }
+
+    parentForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      parentStatus.textContent = "Saving...";
+      try {
+        await setDoc(doc(db, "parentProfiles", currentUser.uid), {
+          parentName: parentForm.parentName.value.trim(),
+          parentEmail: currentUser.email,
+          parentPhone: parentForm.parentPhone.value.trim()
+        });
+        parentStatus.textContent = "Saved.";
+      } catch (err) {
+        parentStatus.textContent = "Could not save. Please try again.";
+      }
+    });
+
+    addCamperBtn.addEventListener("click", async () => {
+      addCamperBtn.disabled = true;
+      try {
+        await addDoc(collection(db, "parentProfiles", currentUser.uid, "campers"), {
+          camperName: "",
+          camperAge: "",
+          tshirtSize: "",
+          emergencyContact: "",
+          notes: "",
+          lastRegisteredYear: null
+        });
+        await loadCampers();
+      } finally {
+        addCamperBtn.disabled = false;
+      }
+    });
+
+    async function loadCampers() {
+      const snap = await getDocs(collection(db, "parentProfiles", currentUser.uid, "campers"));
+      campersList.innerHTML = "";
+
+      if (snap.empty) {
+        const p = document.createElement("p");
+        p.textContent = "No campers saved yet. Add one below.";
+        campersList.appendChild(p);
+        return;
+      }
+
+      snap.forEach((docSnap) => {
+        campersList.appendChild(buildCamperCard(docSnap.id, docSnap.data()));
+      });
+    }
+
+    function buildCamperCard(camperId, camper) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.marginTop = "1rem";
+
+      const nameInput = labeledInput("Camper full name", "text", camper.camperName);
+      const ageInput = labeledInput("Camper age", "number", camper.camperAge);
+      const tshirtSelect = labeledSelect("T-shirt size", camper.tshirtSize, TSHIRT_SIZES);
+      const emergencyInput = labeledInput("Emergency contact (name & phone)", "text", camper.emergencyContact);
+      const notesInput = labeledTextarea("Allergies or medical notes", camper.notes);
+
+      [nameInput, ageInput, tshirtSelect, emergencyInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
+
+      const saveBtn = document.createElement("button");
+      saveBtn.className = "toggle-btn";
+      saveBtn.textContent = "Save Camper";
+      saveBtn.addEventListener("click", async () => {
+        saveBtn.disabled = true;
+        await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
+          camperName: nameInput.input.value.trim(),
+          camperAge: Number(ageInput.input.value),
+          tshirtSize: tshirtSelect.input.value,
+          emergencyContact: emergencyInput.input.value.trim(),
+          notes: notesInput.input.value.trim()
+        });
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Saved!";
+        setTimeout(() => (saveBtn.textContent = "Save Camper"), 1500);
+      });
+
+      const registerBtn = document.createElement("button");
+      registerBtn.className = "btn";
+      registerBtn.style.marginLeft = "0.5rem";
+      const alreadyRegistered = camper.lastRegisteredYear === CURRENT_YEAR;
+      registerBtn.textContent = alreadyRegistered ? `Registered for ${CURRENT_YEAR} ✓` : `Register for ${CURRENT_YEAR} — $250`;
+      registerBtn.disabled = alreadyRegistered;
+      registerBtn.addEventListener("click", async () => {
+        registerBtn.disabled = true;
+        try {
+          const parentSnap = await getDoc(doc(db, "parentProfiles", currentUser.uid));
+          const parentData = parentSnap.exists() ? parentSnap.data() : {};
+
+          await addDoc(collection(db, "registrations"), {
+            camperName: nameInput.input.value.trim(),
+            camperAge: Number(ageInput.input.value),
+            tshirtSize: tshirtSelect.input.value,
+            parentName: parentData.parentName || "",
+            parentEmail: currentUser.email,
+            parentPhone: parentData.parentPhone || "",
+            emergencyContact: emergencyInput.input.value.trim(),
+            notes: notesInput.input.value.trim(),
+            paid: false,
+            submittedAt: serverTimestamp()
+          });
+
+          await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
+            lastRegisteredYear: CURRENT_YEAR
+          });
+
+          registerBtn.textContent = `Registered for ${CURRENT_YEAR} ✓`;
+        } catch (err) {
+          registerBtn.disabled = false;
+          registerBtn.textContent = "Something went wrong — try again";
+        }
+      });
+
+      const actions = document.createElement("div");
+      actions.style.marginTop = "1rem";
+      actions.appendChild(saveBtn);
+      actions.appendChild(registerBtn);
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    function labeledInput(labelText, type, value) {
+      const wrapper = document.createElement("div");
+      wrapper.style.marginTop = "0.75rem";
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      label.style.display = "block";
+      label.style.marginBottom = "0.25rem";
+      const input = document.createElement("input");
+      input.type = type;
+      input.value = value ?? "";
+      wrapper.appendChild(label);
+      wrapper.appendChild(input);
+      return { wrapper, input };
+    }
+
+    function labeledTextarea(labelText, value) {
+      const wrapper = document.createElement("div");
+      wrapper.style.marginTop = "0.75rem";
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      label.style.display = "block";
+      label.style.marginBottom = "0.25rem";
+      const input = document.createElement("textarea");
+      input.rows = 2;
+      input.value = value ?? "";
+      wrapper.appendChild(label);
+      wrapper.appendChild(input);
+      return { wrapper, input };
+    }
+
+    function labeledSelect(labelText, value, options) {
+      const wrapper = document.createElement("div");
+      wrapper.style.marginTop = "0.75rem";
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      label.style.display = "block";
+      label.style.marginBottom = "0.25rem";
+      const input = document.createElement("select");
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "Select a size";
+      input.appendChild(blank);
+      options.forEach((opt) => {
+        const option = document.createElement("option");
+        option.value = opt;
+        option.textContent = opt;
+        if (opt === value) option.selected = true;
+        input.appendChild(option);
+      });
+      wrapper.appendChild(label);
+      wrapper.appendChild(input);
+      return { wrapper, input };
+    }
+  </script>
+</body>
+</html>

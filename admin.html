@@ -95,7 +95,15 @@
         return;
       }
 
-      isAdmin = await checkIsAdmin(user);
+      const role = await getStaffRole(user);
+
+      if (!role) {
+        statusEl.textContent = "Your account doesn't have access to this dashboard. Contact the camp director if this seems wrong.";
+        await signOut(auth);
+        return;
+      }
+
+      isAdmin = role === "admin";
       roleBanner.textContent = isAdmin
         ? "You're signed in as an admin. You can edit registrations and payment status."
         : "You're signed in as staff. You have view-only access to registrations.";
@@ -104,12 +112,12 @@
       await loadRegistrations();
     });
 
-    async function checkIsAdmin(user) {
+    async function getStaffRole(user) {
       try {
         const roleSnap = await getDoc(doc(db, "staffRoles", user.email.toLowerCase()));
-        return roleSnap.exists() && roleSnap.data().role === "admin";
+        return roleSnap.exists() ? roleSnap.data().role : null;
       } catch (err) {
-        return false;
+        return null;
       }
     }
 
