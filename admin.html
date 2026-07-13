@@ -20,6 +20,7 @@
 
   <main class="wide">
     <h1>Registrations</h1>
+    <p id="role-banner" class="info-box" style="display: none;"></p>
 
     <div class="cards" id="stats-cards" style="display: none;">
       <div class="card">
@@ -67,7 +68,7 @@
   <script type="module">
     import { auth, db } from "./firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-    import { collection, getDocs, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import { collection, getDocs, getDoc, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
     const TSHIRT_SIZES = ["Youth S", "Youth M", "Youth L", "Adult S", "Adult M", "Adult L", "Adult XL"];
 
@@ -78,6 +79,9 @@
     const statTotal = document.getElementById("stat-total");
     const statPaid = document.getElementById("stat-paid");
     const statUnpaid = document.getElementById("stat-unpaid");
+    const roleBanner = document.getElementById("role-banner");
+
+    let isAdmin = false;
 
     document.getElementById("logout-link").addEventListener("click", async (e) => {
       e.preventDefault();
@@ -90,8 +94,24 @@
         window.location.href = "admin-login.html";
         return;
       }
+
+      isAdmin = await checkIsAdmin(user);
+      roleBanner.textContent = isAdmin
+        ? "You're signed in as an admin. You can edit registrations and payment status."
+        : "You're signed in as staff. You have view-only access to registrations.";
+      roleBanner.style.display = "block";
+
       await loadRegistrations();
     });
+
+    async function checkIsAdmin(user) {
+      try {
+        const roleSnap = await getDoc(doc(db, "staffRoles", user.email.toLowerCase()));
+        return roleSnap.exists() && roleSnap.data().role === "admin";
+      } catch (err) {
+        return false;
+      }
+    }
 
     async function loadRegistrations() {
       try {
@@ -139,31 +159,38 @@
       const paidLabel = document.createElement("span");
       paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
       paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
-
-      const paidToggleBtn = document.createElement("button");
-      paidToggleBtn.className = "toggle-btn";
-      paidToggleBtn.textContent = reg.paid ? "Mark Unpaid" : "Mark Paid";
-      paidToggleBtn.style.marginLeft = "0.5rem";
-      paidToggleBtn.addEventListener("click", async () => {
-        paidToggleBtn.disabled = true;
-        await updateDoc(doc(db, "registrations", id), { paid: !reg.paid });
-        await loadRegistrations();
-      });
-
       paidCell.appendChild(paidLabel);
-      paidCell.appendChild(paidToggleBtn);
+
+      if (isAdmin) {
+        const paidToggleBtn = document.createElement("button");
+        paidToggleBtn.className = "toggle-btn";
+        paidToggleBtn.textContent = reg.paid ? "Mark Unpaid" : "Mark Paid";
+        paidToggleBtn.style.marginLeft = "0.5rem";
+        paidToggleBtn.addEventListener("click", async () => {
+          paidToggleBtn.disabled = true;
+          await updateDoc(doc(db, "registrations", id), { paid: !reg.paid });
+          await loadRegistrations();
+        });
+        paidCell.appendChild(paidToggleBtn);
+      }
+
       row.appendChild(paidCell);
 
       const actionsCell = document.createElement("td");
-      const editBtn = document.createElement("button");
-      editBtn.className = "toggle-btn";
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", () => renderEditRow(row, id, reg));
-      actionsCell.appendChild(editBtn);
+      if (isAdmin) {
+        const editBtn = document.createElement("button");
+        editBtn.className = "toggle-btn";
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", () => renderEditRow(row, id, reg));
+        actionsCell.appendChild(editBtn);
+      } else {
+        actionsCell.textContent = "—";
+      }
       row.appendChild(actionsCell);
     }
 
     function renderEditRow(row, id, reg) {
+      if (!isAdmin) return;
       row.innerHTML = "";
 
       const nameInput = createField("text", reg.camperName, "camperName");
