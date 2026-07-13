@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Camp Ewing Woods</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Camp Ewing Woods</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="#" id="logout-link">Log Out</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <h1>Registrations</h1>
+    <p id="status">Loading...</p>
+
+    <div class="data-table-wrap">
+      <table id="registrations-table" style="display: none;">
+        <thead>
+          <tr>
+            <th>Camper</th>
+            <th>Age</th>
+            <th>T-Shirt</th>
+            <th>Parent</th>
+            <th>Parent Email</th>
+            <th>Parent Phone</th>
+            <th>Emergency Contact</th>
+            <th>Notes</th>
+            <th>Paid</th>
+          </tr>
+        </thead>
+        <tbody id="registrations-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Camp Ewing Woods</p>
+  </footer>
+
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { collection, getDocs, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const statusEl = document.getElementById("status");
+    const table = document.getElementById("registrations-table");
+    const tbody = document.getElementById("registrations-body");
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "admin-login.html";
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+      await loadRegistrations();
+    });
+
+    async function loadRegistrations() {
+      try {
+        const q = query(collection(db, "registrations"), orderBy("submittedAt", "desc"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          statusEl.textContent = "No registrations yet.";
+          return;
+        }
+
+        tbody.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const reg = docSnap.data();
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${escapeHtml(reg.camperName)}</td>
+            <td>${escapeHtml(reg.camperAge)}</td>
+            <td>${escapeHtml(reg.tshirtSize)}</td>
+            <td>${escapeHtml(reg.parentName)}</td>
+            <td>${escapeHtml(reg.parentEmail)}</td>
+            <td>${escapeHtml(reg.parentPhone)}</td>
+            <td>${escapeHtml(reg.emergencyContact)}</td>
+            <td>${escapeHtml(reg.notes)}</td>
+            <td></td>
+          `;
+
+          const paidCell = row.lastElementChild;
+          const paidLabel = document.createElement("span");
+          paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
+          paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
+
+          const toggleBtn = document.createElement("button");
+          toggleBtn.className = "toggle-btn";
+          toggleBtn.textContent = reg.paid ? "Mark Unpaid" : "Mark Paid";
+          toggleBtn.style.marginLeft = "0.5rem";
+          toggleBtn.addEventListener("click", async () => {
+            toggleBtn.disabled = true;
+            await updateDoc(doc(db, "registrations", docSnap.id), { paid: !reg.paid });
+            await loadRegistrations();
+          });
+
+          paidCell.appendChild(paidLabel);
+          paidCell.appendChild(toggleBtn);
+          tbody.appendChild(row);
+        });
+
+        statusEl.style.display = "none";
+        table.style.display = "table";
+      } catch (err) {
+        statusEl.textContent = "Could not load registrations. Check your connection and permissions.";
+      }
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = value ?? "";
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

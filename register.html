@@ -21,31 +21,90 @@
   <main>
     <h1>Register for Camp</h1>
 
-    <p class="price">$450 <span style="font-size: 1rem; color: var(--text);">per camper (placeholder)</span></p>
-    <p>Price covers lodging, meals, and all activities for the week.</p>
-
-    <h2>How to Register</h2>
-    <ol>
-      <li>Reach out via the <a href="contact.html">contact page</a> to request a registration form.</li>
-      <li>Complete the camper health &amp; emergency contact form.</li>
-      <li>Submit payment to reserve your camper's spot.</li>
-    </ol>
+    <p class="price">$60 <span style="font-size: 1rem; color: var(--text);">per camper</span></p>
 
     <div class="info-box">
-      Online registration is coming soon. For now, <a href="contact.html">contact us</a>
-      to reserve a spot for the August 3&ndash;9, 2026 session (placeholder dates).
+      Submitting this form reserves your camper's spot. The $60 registration
+      fee is collected separately (cash, check, or other arrangement) &mdash;
+      we'll follow up with payment details after you register.
     </div>
 
-    <h2>What to Bring</h2>
-    <p>
-      A full packing list will be provided after registration. In general,
-      campers should bring clothing for a week outdoors, a swimsuit, closed-toe
-      shoes, a sleeping bag, and personal toiletries.
-    </p>
+    <form id="registration-form">
+      <label for="camperName">Camper full name</label>
+      <input type="text" id="camperName" name="camperName" required>
+
+      <label for="camperAge">Camper age</label>
+      <input type="number" id="camperAge" name="camperAge" min="8" max="15" required>
+
+      <label for="tshirtSize">T-shirt size</label>
+      <select id="tshirtSize" name="tshirtSize" required>
+        <option value="">Select a size</option>
+        <option value="Youth S">Youth S</option>
+        <option value="Youth M">Youth M</option>
+        <option value="Youth L">Youth L</option>
+        <option value="Adult S">Adult S</option>
+        <option value="Adult M">Adult M</option>
+        <option value="Adult L">Adult L</option>
+        <option value="Adult XL">Adult XL</option>
+      </select>
+
+      <label for="parentName">Parent/guardian name</label>
+      <input type="text" id="parentName" name="parentName" required>
+
+      <label for="parentEmail">Parent/guardian email</label>
+      <input type="email" id="parentEmail" name="parentEmail" required>
+
+      <label for="parentPhone">Parent/guardian phone</label>
+      <input type="tel" id="parentPhone" name="parentPhone" required>
+
+      <label for="emergencyContact">Emergency contact (name &amp; phone)</label>
+      <input type="text" id="emergencyContact" name="emergencyContact" required>
+
+      <label for="notes">Allergies or medical notes (optional)</label>
+      <textarea id="notes" name="notes" rows="3"></textarea>
+
+      <button type="submit" class="btn">Submit Registration</button>
+    </form>
+
+    <p id="form-status" role="status"></p>
   </main>
 
   <footer>
-    <p>&copy; 2026 Camp Ewing Woods</p>
+    <p>&copy; 2026 Camp Ewing Woods &middot; <a href="admin-login.html">Staff Login</a></p>
   </footer>
+
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const form = document.getElementById("registration-form");
+    const status = document.getElementById("form-status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      status.textContent = "Submitting...";
+
+      const data = {
+        camperName: form.camperName.value.trim(),
+        camperAge: Number(form.camperAge.value),
+        tshirtSize: form.tshirtSize.value,
+        parentName: form.parentName.value.trim(),
+        parentEmail: form.parentEmail.value.trim(),
+        parentPhone: form.parentPhone.value.trim(),
+        emergencyContact: form.emergencyContact.value.trim(),
+        notes: form.notes.value.trim(),
+        paid: false,
+        submittedAt: serverTimestamp()
+      };
+
+      try {
+        await addDoc(collection(db, "registrations"), data);
+        form.reset();
+        status.textContent = "Thanks! Your registration has been received.";
+      } catch (err) {
+        status.textContent = "Something went wrong submitting your registration. Please try again or contact us.";
+      }
+    });
+  </script>
 </body>
 </html>

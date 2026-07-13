@@ -158,6 +158,75 @@ th {
   border-radius: 4px;
 }
 
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin-top: 1.5rem;
+}
+
+label {
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+form .btn {
+  margin-top: 1.5rem;
+  border: none;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+#form-status {
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.data-table-wrap {
+  overflow-x: auto;
+}
+
+.paid-yes {
+  color: var(--green-dark);
+  font-weight: bold;
+}
+
+.paid-no {
+  color: #b23b3b;
+  font-weight: bold;
+}
+
+.toggle-btn {
+  background: var(--green-light);
+  border: 1px solid var(--green);
+  color: var(--green-dark);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.toggle-btn:hover {
+  background: var(--green);
+  color: #fff;
+}
+
 footer {
   text-align: center;
   padding: 1.5rem;
