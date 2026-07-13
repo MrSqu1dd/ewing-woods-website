@@ -50,7 +50,7 @@
     import { auth, db } from "./firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
     import {
-      doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp
+      doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, query, where
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
     const TSHIRT_SIZES = ["Youth S", "Youth M", "Youth L", "Adult S", "Adult M", "Adult L", "Adult XL"];
@@ -222,7 +222,9 @@
             emergencyContact: emergencyInput.input.value.trim(),
             notes: notesInput.input.value.trim(),
             paid: false,
-            submittedAt: serverTimestamp()
+            submittedAt: serverTimestamp(),
+            camperId: camperId,
+            parentUid: currentUser.uid
           });
 
           await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
@@ -245,9 +247,13 @@
       removeBtn.textContent = "Remove Camper";
       removeBtn.addEventListener("click", async () => {
         const label = nameInput.input.value.trim() || "this camper";
-        if (!window.confirm(`Remove ${label}'s saved info? This cannot be undone.`)) return;
+        if (!window.confirm(`Remove ${label}'s saved info? This will also remove them from this year's registry if registered. This cannot be undone.`)) return;
         removeBtn.disabled = true;
         try {
+          const regQuery = query(collection(db, "registrations"), where("camperId", "==", camperId));
+          const regSnap = await getDocs(regQuery);
+          await Promise.all(regSnap.docs.map((regDoc) => deleteDoc(regDoc.ref)));
+
           await deleteDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId));
           await loadCampers();
         } catch (err) {
