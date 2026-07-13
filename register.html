@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,18 +22,21 @@
     </ul>
   </nav>
 
-  <main>
+  <div class="page-header">
     <h1>Register for Camp</h1>
+    <p>Reserve your camper's spot for this summer</p>
+  </div>
 
-    <p class="price">$250 <span style="font-size: 1rem; color: var(--text);">per camper</span></p>
+  <main>
+    <p class="price reveal">$250 <span style="font-size: 1rem; color: var(--text);">per camper</span></p>
 
-    <div class="info-box">
+    <div class="info-box reveal">
       Submitting this form reserves your camper's spot. The $250 registration
       fee is collected separately (cash, check, or other arrangement) &mdash;
       we'll follow up with payment details after you register.
     </div>
 
-    <form id="registration-form">
+    <form id="registration-form" class="reveal">
       <label for="camperName">Camper full name</label>
       <input type="text" id="camperName" name="camperName" required>
 
@@ -74,6 +80,7 @@
     <p>&copy; 2026 Ewing Woods Youth Camp &middot; <a href="admin-login.html">Staff Login</a></p>
   </footer>
 
+  <script src="scripts.js"></script>
   <script type="module">
     import { db } from "./firebase-config.js";
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";

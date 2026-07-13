@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Schedule | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,14 +22,17 @@
     </ul>
   </nav>
 
-  <main>
+  <div class="page-header">
     <h1>Schedule</h1>
+    <p>A full week of activities, worship, and adventure</p>
+  </div>
 
-    <div class="info-box">
+  <main>
+    <div class="info-box reveal">
       <strong>Session Dates (placeholder):</strong> August 3&ndash;9, 2026
     </div>
 
-    <h2>Sample Daily Schedule</h2>
+    <h2 class="reveal">Sample Daily Schedule</h2>
     <table>
       <thead>
         <tr><th>Time</th><th>Activity</th></tr>
@@ -44,12 +50,14 @@
       </tbody>
     </table>
 
-    <h2>Activities Offered</h2>
-    <p>Canoeing &middot; Archery &middot; Hiking &middot; Arts &amp; Crafts &middot; Campfires &middot; Swimming &middot; Team Sports</p>
+    <h2 class="reveal">Activities Offered</h2>
+    <p class="reveal">Canoeing &middot; Archery &middot; Hiking &middot; Arts &amp; Crafts &middot; Campfires &middot; Swimming &middot; Team Sports</p>
   </main>
 
   <footer>
     <p>&copy; 2026 Ewing Woods Youth Camp &middot; <a href="admin-login.html">Staff Login</a></p>
   </footer>
+
+  <script src="scripts.js"></script>
 </body>
 </html>

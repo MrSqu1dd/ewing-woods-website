@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ewing Woods Youth Camp | Christian Summer Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,14 +22,16 @@
     </ul>
   </nav>
 
-  <div class="hero">
-    <h1>Ewing Woods Youth Camp</h1>
-    <p>One week a year in the woods. A lifetime of memories.</p>
-    <a class="btn" href="register.html">Register for This Summer</a>
+  <div class="hero" style="background-image: url('images/camp-group-photo.jpeg');">
+    <div class="hero-content">
+      <h1>Ewing Woods Youth Camp</h1>
+      <p>One week a year in the woods. A lifetime of memories.</p>
+      <a class="btn" href="register.html">Register for This Summer</a>
+    </div>
   </div>
 
   <main>
-    <section>
+    <section class="reveal">
       <h2>Welcome to Camp</h2>
       <p>
         Ewing Woods Youth Camp is a one-week Christian summer camp set among the trees,
@@ -36,7 +41,7 @@
       </p>
     </section>
 
-    <div class="cards">
+    <div class="cards reveal">
       <div class="card">
         <h3>Outdoor Adventure</h3>
         <p>Hiking, canoeing, campfires, and archery led by experienced counselors.</p>
@@ -55,7 +60,7 @@
       </div>
     </div>
 
-    <div class="info-box">
+    <div class="info-box reveal">
       <strong>This Year's Session:</strong> August 3&ndash;9, 2026 (placeholder) &middot;
       Ewing Woods Campground &middot; Ages 11&ndash;18 (6th&ndash;12th grade)
     </div>
@@ -64,5 +69,7 @@
   <footer>
     <p>&copy; 2026 Ewing Woods Youth Camp &middot; <a href="admin-login.html">Staff Login</a></p>
   </footer>
+
+  <script src="scripts.js"></script>
 </body>
 </html>

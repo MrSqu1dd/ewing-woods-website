@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,22 +22,26 @@
     </ul>
   </nav>
 
-  <main>
+  <div class="page-header">
     <h1>About Ewing Woods Youth Camp</h1>
-    <p>
+    <p>Christian summer camp &middot; one week &middot; a lifetime of memories</p>
+  </div>
+
+  <main>
+    <p class="reveal">
       Ewing Woods Youth Camp is a Christian summer camp that runs for one week each
       summer, bringing campers together for a week of outdoor adventure,
       teamwork, and fun.
     </p>
 
-    <h2>Our Mission</h2>
-    <p>
+    <h2 class="reveal">Our Mission</h2>
+    <p class="reveal">
       Campers experience an intense encounter with God's word in the midst of
       extreme fun.
     </p>
 
-    <h2>A Letter From Our Director</h2>
-    <div class="info-box">
+    <h2 class="reveal">A Letter From Our Director</h2>
+    <div class="info-box reveal">
       <p>Dear campers/parents,</p>
       <p>
         My name is Carter Covert, and I am honored to be the dean/director of
@@ -51,34 +58,14 @@
       <p><strong>&mdash; Carter Covert, Camp Director</strong></p>
     </div>
 
-    <h2>Who Can Attend</h2>
-    <p>
+    <h2 class="reveal">Who Can Attend</h2>
+    <p class="reveal">
       Campers must be at least 11 years old, or entering 6th grade, through
       12th grade (as of fall 2026).
     </p>
 
-    <h2>Our Values</h2>
-    <div class="cards">
-      <div class="card">
-        <h3>Community</h3>
-        <p>Every camper is welcomed into a cabin group that feels like family.</p>
-      </div>
-      <div class="card">
-        <h3>Growth</h3>
-        <p>Trying new activities builds confidence that lasts beyond camp.</p>
-      </div>
-      <div class="card">
-        <h3>Nature</h3>
-        <p>A week unplugged, outdoors, and immersed in the woods.</p>
-      </div>
-      <div class="card">
-        <h3>Faith</h3>
-        <p>Daily devotions and worship point every activity back to God.</p>
-      </div>
-    </div>
-
-    <h2>Camp Photos</h2>
-    <div class="gallery">
+    <h2 class="reveal">Camp Photos</h2>
+    <div class="gallery reveal">
       <img src="images/camp-group-photo.jpeg" alt="Campers and staff group photo at Ewing Woods">
       <img src="images/camp-cabins.jpeg" alt="Camper cabins at Ewing Woods">
       <img src="images/camp-lodge.jpeg" alt="Main lodge building at Ewing Woods">
@@ -89,5 +76,7 @@
   <footer>
     <p>&copy; 2026 Ewing Woods Youth Camp &middot; <a href="admin-login.html">Staff Login</a></p>
   </footer>
+
+  <script src="scripts.js"></script>
 </body>
 </html>
