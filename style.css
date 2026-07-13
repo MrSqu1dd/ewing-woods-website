@@ -198,6 +198,29 @@ form .btn {
   color: var(--green-dark);
 }
 
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.gallery img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.rules-list {
+  padding-left: 1.25rem;
+}
+
+.rules-list li {
+  margin-bottom: 0.75rem;
+}
+
 .data-table-wrap {
   overflow-x: auto;
 }
