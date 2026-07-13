@@ -52,6 +52,7 @@
             <th>Notes</th>
             <th>Registered On</th>
             <th>Paid</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="registrations-body"></tbody>
@@ -67,6 +68,8 @@
     import { auth, db } from "./firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
     import { collection, getDocs, doc, updateDoc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const TSHIRT_SIZES = ["Youth S", "Youth M", "Youth L", "Adult S", "Adult M", "Adult L", "Adult XL"];
 
     const statusEl = document.getElementById("status");
     const table = document.getElementById("registrations-table");
@@ -108,39 +111,9 @@
 
         tbody.innerHTML = "";
         snapshot.forEach((docSnap) => {
-          const reg = docSnap.data();
           const row = document.createElement("tr");
-
-          row.innerHTML = `
-            <td>${escapeHtml(reg.camperName)}</td>
-            <td>${escapeHtml(reg.camperAge)}</td>
-            <td>${escapeHtml(reg.tshirtSize)}</td>
-            <td>${escapeHtml(reg.parentName)}</td>
-            <td>${escapeHtml(reg.parentEmail)}</td>
-            <td>${escapeHtml(reg.parentPhone)}</td>
-            <td>${escapeHtml(reg.emergencyContact)}</td>
-            <td>${escapeHtml(reg.notes)}</td>
-            <td>${escapeHtml(formatDate(reg.submittedAt))}</td>
-            <td></td>
-          `;
-
-          const paidCell = row.lastElementChild;
-          const paidLabel = document.createElement("span");
-          paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
-          paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
-
-          const toggleBtn = document.createElement("button");
-          toggleBtn.className = "toggle-btn";
-          toggleBtn.textContent = reg.paid ? "Mark Unpaid" : "Mark Paid";
-          toggleBtn.style.marginLeft = "0.5rem";
-          toggleBtn.addEventListener("click", async () => {
-            toggleBtn.disabled = true;
-            await updateDoc(doc(db, "registrations", docSnap.id), { paid: !reg.paid });
-            await loadRegistrations();
-          });
-
-          paidCell.appendChild(paidLabel);
-          paidCell.appendChild(toggleBtn);
+          row.dataset.id = docSnap.id;
+          renderViewRow(row, docSnap.id, docSnap.data());
           tbody.appendChild(row);
         });
 
@@ -151,10 +124,136 @@
       }
     }
 
-    function escapeHtml(value) {
-      const div = document.createElement("div");
-      div.textContent = value ?? "";
-      return div.innerHTML;
+    function renderViewRow(row, id, reg) {
+      row.innerHTML = "";
+
+      [reg.camperName, reg.camperAge, reg.tshirtSize, reg.parentName, reg.parentEmail,
+       reg.parentPhone, reg.emergencyContact, reg.notes, formatDate(reg.submittedAt)]
+        .forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = value ?? "";
+          row.appendChild(td);
+        });
+
+      const paidCell = document.createElement("td");
+      const paidLabel = document.createElement("span");
+      paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
+      paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
+
+      const paidToggleBtn = document.createElement("button");
+      paidToggleBtn.className = "toggle-btn";
+      paidToggleBtn.textContent = reg.paid ? "Mark Unpaid" : "Mark Paid";
+      paidToggleBtn.style.marginLeft = "0.5rem";
+      paidToggleBtn.addEventListener("click", async () => {
+        paidToggleBtn.disabled = true;
+        await updateDoc(doc(db, "registrations", id), { paid: !reg.paid });
+        await loadRegistrations();
+      });
+
+      paidCell.appendChild(paidLabel);
+      paidCell.appendChild(paidToggleBtn);
+      row.appendChild(paidCell);
+
+      const actionsCell = document.createElement("td");
+      const editBtn = document.createElement("button");
+      editBtn.className = "toggle-btn";
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => renderEditRow(row, id, reg));
+      actionsCell.appendChild(editBtn);
+      row.appendChild(actionsCell);
+    }
+
+    function renderEditRow(row, id, reg) {
+      row.innerHTML = "";
+
+      const nameInput = createField("text", reg.camperName, "camperName");
+      const ageInput = createField("number", reg.camperAge, "camperAge");
+      const tshirtSelect = createSelectField(reg.tshirtSize, "tshirtSize", TSHIRT_SIZES);
+      const parentNameInput = createField("text", reg.parentName, "parentName");
+      const parentEmailInput = createField("email", reg.parentEmail, "parentEmail");
+      const parentPhoneInput = createField("tel", reg.parentPhone, "parentPhone");
+      const emergencyInput = createField("text", reg.emergencyContact, "emergencyContact");
+      const notesInput = createTextareaField(reg.notes, "notes");
+
+      [nameInput, ageInput, tshirtSelect, parentNameInput, parentEmailInput,
+       parentPhoneInput, emergencyInput, notesInput].forEach((field) => {
+        const td = document.createElement("td");
+        td.appendChild(field);
+        row.appendChild(td);
+      });
+
+      const dateCell = document.createElement("td");
+      dateCell.textContent = formatDate(reg.submittedAt);
+      row.appendChild(dateCell);
+
+      const paidCell = document.createElement("td");
+      const paidLabel = document.createElement("span");
+      paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
+      paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
+      paidCell.appendChild(paidLabel);
+      row.appendChild(paidCell);
+
+      const actionsCell = document.createElement("td");
+      const saveBtn = document.createElement("button");
+      saveBtn.className = "toggle-btn";
+      saveBtn.textContent = "Save";
+      saveBtn.addEventListener("click", async () => {
+        saveBtn.disabled = true;
+        const updated = {
+          camperName: nameInput.value.trim(),
+          camperAge: Number(ageInput.value),
+          tshirtSize: tshirtSelect.value,
+          parentName: parentNameInput.value.trim(),
+          parentEmail: parentEmailInput.value.trim(),
+          parentPhone: parentPhoneInput.value.trim(),
+          emergencyContact: emergencyInput.value.trim(),
+          notes: notesInput.value.trim()
+        };
+        await updateDoc(doc(db, "registrations", id), updated);
+        await loadRegistrations();
+      });
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "toggle-btn";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.style.marginLeft = "0.5rem";
+      cancelBtn.addEventListener("click", () => renderViewRow(row, id, reg));
+
+      actionsCell.appendChild(saveBtn);
+      actionsCell.appendChild(cancelBtn);
+      row.appendChild(actionsCell);
+    }
+
+    function createField(type, value, field) {
+      const input = document.createElement("input");
+      input.type = type;
+      input.value = value ?? "";
+      input.dataset.field = field;
+      input.className = "table-input";
+      return input;
+    }
+
+    function createTextareaField(value, field) {
+      const textarea = document.createElement("textarea");
+      textarea.value = value ?? "";
+      textarea.dataset.field = field;
+      textarea.className = "table-input";
+      textarea.rows = 2;
+      return textarea;
+    }
+
+    function createSelectField(value, field, options) {
+      const select = document.createElement("select");
+      select.dataset.field = field;
+      select.className = "table-input";
+      options.forEach((opt) => {
+        const option = document.createElement("option");
+        option.value = opt;
+        option.textContent = opt;
+        if (opt === value) option.selected = true;
+        select.appendChild(option);
+      });
+      return select;
     }
 
     function formatDate(timestamp) {
