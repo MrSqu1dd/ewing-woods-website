@@ -50,6 +50,7 @@
             <th>Parent Phone</th>
             <th>Emergency Contact</th>
             <th>Notes</th>
+            <th>Registered On</th>
             <th>Paid</th>
           </tr>
         </thead>
@@ -119,6 +120,7 @@
             <td>${escapeHtml(reg.parentPhone)}</td>
             <td>${escapeHtml(reg.emergencyContact)}</td>
             <td>${escapeHtml(reg.notes)}</td>
+            <td>${escapeHtml(formatDate(reg.submittedAt))}</td>
             <td></td>
           `;
 
@@ -153,6 +155,15 @@
       const div = document.createElement("div");
       div.textContent = value ?? "";
       return div.innerHTML;
+    }
+
+    function formatDate(timestamp) {
+      if (!timestamp || typeof timestamp.toDate !== "function") return "—";
+      return timestamp.toDate().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
     }
   </script>
 </body>
