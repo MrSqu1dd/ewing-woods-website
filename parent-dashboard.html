@@ -50,7 +50,7 @@
     import { auth, db } from "./firebase-config.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
     import {
-      doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, serverTimestamp
+      doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
     const TSHIRT_SIZES = ["Youth S", "Youth M", "Youth L", "Adult S", "Adult M", "Adult L", "Adult XL"];
@@ -148,29 +148,64 @@
 
       [nameInput, ageInput, tshirtSelect, emergencyInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
 
+      let alreadyRegistered = camper.lastRegisteredYear === CURRENT_YEAR;
+      let dirty = false;
+
+      function isValid() {
+        return nameInput.input.value.trim() !== "" &&
+          Number(ageInput.input.value) > 0 &&
+          tshirtSelect.input.value !== "" &&
+          emergencyInput.input.value.trim() !== "";
+      }
+
+      function refreshRegisterButton() {
+        if (alreadyRegistered) {
+          registerBtn.disabled = true;
+          registerBtn.textContent = `Registered for ${CURRENT_YEAR} ✓`;
+        } else if (dirty || !isValid()) {
+          registerBtn.disabled = true;
+          registerBtn.textContent = dirty ? "Save camper info first" : `Register for ${CURRENT_YEAR} — $250`;
+        } else {
+          registerBtn.disabled = false;
+          registerBtn.textContent = `Register for ${CURRENT_YEAR} — $250`;
+        }
+      }
+
+      [nameInput.input, ageInput.input, tshirtSelect.input, emergencyInput.input, notesInput.input]
+        .forEach((el) => {
+          el.addEventListener("input", () => {
+            dirty = true;
+            refreshRegisterButton();
+          });
+        });
+
       const saveBtn = document.createElement("button");
       saveBtn.className = "toggle-btn";
       saveBtn.textContent = "Save Camper";
       saveBtn.addEventListener("click", async () => {
         saveBtn.disabled = true;
-        await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
-          camperName: nameInput.input.value.trim(),
-          camperAge: Number(ageInput.input.value),
-          tshirtSize: tshirtSelect.input.value,
-          emergencyContact: emergencyInput.input.value.trim(),
-          notes: notesInput.input.value.trim()
-        });
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Saved!";
-        setTimeout(() => (saveBtn.textContent = "Save Camper"), 1500);
+        try {
+          await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
+            camperName: nameInput.input.value.trim(),
+            camperAge: Number(ageInput.input.value),
+            tshirtSize: tshirtSelect.input.value,
+            emergencyContact: emergencyInput.input.value.trim(),
+            notes: notesInput.input.value.trim()
+          });
+          dirty = false;
+          refreshRegisterButton();
+          saveBtn.textContent = "Saved!";
+          setTimeout(() => (saveBtn.textContent = "Save Camper"), 1500);
+        } catch (err) {
+          saveBtn.textContent = "Could not save — try again";
+        } finally {
+          saveBtn.disabled = false;
+        }
       });
 
       const registerBtn = document.createElement("button");
       registerBtn.className = "btn";
       registerBtn.style.marginLeft = "0.5rem";
-      const alreadyRegistered = camper.lastRegisteredYear === CURRENT_YEAR;
-      registerBtn.textContent = alreadyRegistered ? `Registered for ${CURRENT_YEAR} ✓` : `Register for ${CURRENT_YEAR} — $250`;
-      registerBtn.disabled = alreadyRegistered;
       registerBtn.addEventListener("click", async () => {
         registerBtn.disabled = true;
         try {
@@ -194,10 +229,29 @@
             lastRegisteredYear: CURRENT_YEAR
           });
 
-          registerBtn.textContent = `Registered for ${CURRENT_YEAR} ✓`;
+          alreadyRegistered = true;
+          refreshRegisterButton();
         } catch (err) {
           registerBtn.disabled = false;
           registerBtn.textContent = "Something went wrong — try again";
+        }
+      });
+
+      refreshRegisterButton();
+
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "danger-btn";
+      removeBtn.style.marginLeft = "0.5rem";
+      removeBtn.textContent = "Remove Camper";
+      removeBtn.addEventListener("click", async () => {
+        const label = nameInput.input.value.trim() || "this camper";
+        if (!window.confirm(`Remove ${label}'s saved info? This cannot be undone.`)) return;
+        removeBtn.disabled = true;
+        try {
+          await deleteDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId));
+          await loadCampers();
+        } catch (err) {
+          removeBtn.disabled = false;
         }
       });
 
@@ -205,6 +259,7 @@
       actions.style.marginTop = "1rem";
       actions.appendChild(saveBtn);
       actions.appendChild(registerBtn);
+      actions.appendChild(removeBtn);
       card.appendChild(actions);
 
       return card;

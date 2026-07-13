@@ -174,6 +174,15 @@ nav a.active::after {
   box-shadow: 0 8px 20px rgba(46, 125, 50, 0.4);
 }
 
+.btn:disabled,
+.toggle-btn:disabled,
+.danger-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 main {
   max-width: 900px;
   margin: 0 auto;
@@ -385,6 +394,22 @@ form .btn {
 
 .toggle-btn:hover {
   background: var(--green);
+  color: #fff;
+}
+
+.danger-btn {
+  background: #fdecea;
+  border: 1px solid #b23b3b;
+  color: #b23b3b;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.danger-btn:hover {
+  background: #b23b3b;
   color: #fff;
 }
 
