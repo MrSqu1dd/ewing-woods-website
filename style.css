@@ -1,10 +1,11 @@
 :root {
-  --forest: #2f4f2f;
-  --forest-dark: #1e331e;
-  --cream: #faf6ee;
-  --tan: #e8dcc4;
-  --accent: #d97a34;
-  --text: #2a2a24;
+  --green: #2e7d32;
+  --green-dark: #1b5e20;
+  --green-light: #e8f5e9;
+  --bg: #ffffff;
+  --border: #e2e8e2;
+  --text: #24291f;
+  --text-muted: #5f6a5a;
 }
 
 * {
@@ -16,12 +17,12 @@ body {
   margin: 0;
   padding: 0;
   color: var(--text);
-  background: var(--cream);
+  background: var(--bg);
   line-height: 1.6;
 }
 
 a {
-  color: var(--forest);
+  color: var(--green);
 }
 
 nav {
@@ -29,15 +30,15 @@ nav {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  background: var(--forest);
-  color: #fff;
+  background: var(--bg);
+  border-bottom: 2px solid var(--green-light);
   padding: 1rem 2rem;
 }
 
 nav .brand {
   font-size: 1.3rem;
   font-weight: bold;
-  color: #fff;
+  color: var(--green-dark);
   text-decoration: none;
 }
 
@@ -51,18 +52,19 @@ nav ul {
 }
 
 nav a {
-  color: #fff;
+  color: var(--text);
   text-decoration: none;
+  font-weight: 500;
 }
 
 nav a:hover,
 nav a.active {
-  text-decoration: underline;
+  color: var(--green);
 }
 
 .hero {
-  background: linear-gradient(180deg, var(--forest) 0%, var(--forest-dark) 100%);
-  color: #fff;
+  background: var(--green-light);
+  color: var(--text);
   text-align: center;
   padding: 4rem 1.5rem;
 }
@@ -70,16 +72,18 @@ nav a.active {
 .hero h1 {
   margin: 0 0 0.5rem;
   font-size: 2.5rem;
+  color: var(--green-dark);
 }
 
 .hero p {
   font-size: 1.2rem;
   margin: 0 0 1.5rem;
+  color: var(--text-muted);
 }
 
 .btn {
   display: inline-block;
-  background: var(--accent);
+  background: var(--green);
   color: #fff;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
@@ -88,13 +92,18 @@ nav a.active {
 }
 
 .btn:hover {
-  opacity: 0.9;
+  background: var(--green-dark);
 }
 
 main {
   max-width: 900px;
   margin: 0 auto;
   padding: 3rem 1.5rem;
+}
+
+main h1,
+main h2 {
+  color: var(--green-dark);
 }
 
 .cards {
@@ -105,15 +114,17 @@ main {
 }
 
 .card {
-  background: #fff;
-  border: 1px solid var(--tan);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--green);
   border-radius: 8px;
   padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .card h3 {
   margin-top: 0;
-  color: var(--forest);
+  color: var(--green-dark);
 }
 
 table {
@@ -125,22 +136,23 @@ table {
 th, td {
   text-align: left;
   padding: 0.75rem;
-  border-bottom: 1px solid var(--tan);
+  border-bottom: 1px solid var(--border);
 }
 
 th {
-  background: var(--tan);
+  background: var(--green-light);
+  color: var(--green-dark);
 }
 
 .price {
   font-size: 2rem;
-  color: var(--forest);
+  color: var(--green-dark);
   font-weight: bold;
 }
 
 .info-box {
-  background: #fff;
-  border-left: 4px solid var(--accent);
+  background: var(--green-light);
+  border-left: 4px solid var(--green);
   padding: 1rem 1.5rem;
   margin: 1.5rem 0;
   border-radius: 4px;
@@ -149,7 +161,7 @@ th {
 footer {
   text-align: center;
   padding: 1.5rem;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
-  border-top: 1px solid var(--tan);
+  border-top: 1px solid var(--border);
 }
