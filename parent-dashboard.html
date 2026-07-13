@@ -252,11 +252,21 @@
         try {
           const regQuery = query(collection(db, "registrations"), where("camperId", "==", camperId));
           const regSnap = await getDocs(regQuery);
-          await Promise.all(regSnap.docs.map((regDoc) => deleteDoc(regDoc.ref)));
+          console.log("[debug] matching registration docs for camperId", camperId, ":", regSnap.size);
+
+          const results = await Promise.allSettled(regSnap.docs.map((regDoc) => deleteDoc(regDoc.ref)));
+          results.forEach((r, i) => {
+            if (r.status === "rejected") {
+              console.error("[debug] failed to delete registration", regSnap.docs[i].id, r.reason?.code, r.reason?.message);
+            } else {
+              console.log("[debug] deleted registration", regSnap.docs[i].id);
+            }
+          });
 
           await deleteDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId));
           await loadCampers();
         } catch (err) {
+          console.error("[debug] remove camper error:", err.code, err.message);
           removeBtn.disabled = false;
         }
       });
