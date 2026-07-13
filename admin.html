@@ -20,6 +20,22 @@
 
   <main>
     <h1>Registrations</h1>
+
+    <div class="cards" id="stats-cards" style="display: none;">
+      <div class="card">
+        <h3 id="stat-total" style="font-size: 2rem; margin-bottom: 0;">0</h3>
+        <p style="margin: 0;">Total Registered</p>
+      </div>
+      <div class="card">
+        <h3 id="stat-paid" style="font-size: 2rem; margin-bottom: 0;">0</h3>
+        <p style="margin: 0;">Paid</p>
+      </div>
+      <div class="card">
+        <h3 id="stat-unpaid" style="font-size: 2rem; margin-bottom: 0;">0</h3>
+        <p style="margin: 0;">Unpaid</p>
+      </div>
+    </div>
+
     <p id="status">Loading...</p>
 
     <div class="data-table-wrap">
@@ -54,6 +70,10 @@
     const statusEl = document.getElementById("status");
     const table = document.getElementById("registrations-table");
     const tbody = document.getElementById("registrations-body");
+    const statsCards = document.getElementById("stats-cards");
+    const statTotal = document.getElementById("stat-total");
+    const statPaid = document.getElementById("stat-paid");
+    const statUnpaid = document.getElementById("stat-unpaid");
 
     document.getElementById("logout-link").addEventListener("click", async (e) => {
       e.preventDefault();
@@ -73,6 +93,12 @@
       try {
         const q = query(collection(db, "registrations"), orderBy("submittedAt", "desc"));
         const snapshot = await getDocs(q);
+
+        const paidCount = snapshot.docs.filter((d) => d.data().paid).length;
+        statTotal.textContent = snapshot.size;
+        statPaid.textContent = paidCount;
+        statUnpaid.textContent = snapshot.size - paidCount;
+        statsCards.style.display = "grid";
 
         if (snapshot.empty) {
           statusEl.textContent = "No registrations yet.";
