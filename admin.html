@@ -202,6 +202,13 @@
           removeBtn.disabled = true;
           try {
             await deleteDoc(doc(db, "registrations", id));
+
+            if (reg.camperId && reg.parentUid) {
+              await updateDoc(doc(db, "parentProfiles", reg.parentUid, "campers", reg.camperId), {
+                lastRegisteredYear: null
+              });
+            }
+
             await loadRegistrations();
           } catch (err) {
             removeBtn.disabled = false;
