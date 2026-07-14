@@ -45,6 +45,7 @@
           <tr>
             <th>Camper</th>
             <th>Age</th>
+            <th>Gender</th>
             <th>T-Shirt</th>
             <th>Parent</th>
             <th>Parent Email</th>
@@ -155,7 +156,7 @@
     function renderViewRow(row, id, reg) {
       row.innerHTML = "";
 
-      [reg.camperName, reg.camperAge, reg.tshirtSize, reg.parentName, reg.parentEmail,
+      [reg.camperName, reg.camperAge, reg.gender, reg.tshirtSize, reg.parentName, reg.parentEmail,
        reg.parentPhone, reg.emergencyContact, reg.notes, formatDate(reg.submittedAt)]
         .forEach((value) => {
           const td = document.createElement("td");
@@ -227,6 +228,7 @@
 
       const nameInput = createField("text", reg.camperName, "camperName");
       const ageInput = createField("number", reg.camperAge, "camperAge");
+      const genderSelect = createSelectField(reg.gender, "gender", ["Male", "Female"]);
       const tshirtSelect = createSelectField(reg.tshirtSize, "tshirtSize", TSHIRT_SIZES);
       const parentNameInput = createField("text", reg.parentName, "parentName");
       const parentEmailInput = createField("email", reg.parentEmail, "parentEmail");
@@ -234,7 +236,7 @@
       const emergencyInput = createField("text", reg.emergencyContact, "emergencyContact");
       const notesInput = createTextareaField(reg.notes, "notes");
 
-      [nameInput, ageInput, tshirtSelect, parentNameInput, parentEmailInput,
+      [nameInput, ageInput, genderSelect, tshirtSelect, parentNameInput, parentEmailInput,
        parentPhoneInput, emergencyInput, notesInput].forEach((field) => {
         const td = document.createElement("td");
         td.appendChild(field);
@@ -261,6 +263,7 @@
         const updated = {
           camperName: nameInput.value.trim(),
           camperAge: Number(ageInput.value),
+          gender: genderSelect.value,
           tshirtSize: tshirtSelect.value,
           parentName: parentNameInput.value.trim(),
           parentEmail: parentEmailInput.value.trim(),

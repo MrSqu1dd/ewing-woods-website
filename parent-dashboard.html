@@ -108,6 +108,7 @@
         await addDoc(collection(db, "parentProfiles", currentUser.uid, "campers"), {
           camperName: "",
           camperAge: "",
+          gender: "",
           tshirtSize: "",
           emergencyContact: "",
           notes: "",
@@ -142,11 +143,12 @@
 
       const nameInput = labeledInput("Camper full name", "text", camper.camperName);
       const ageInput = labeledInput("Camper age", "number", camper.camperAge);
-      const tshirtSelect = labeledSelect("T-shirt size", camper.tshirtSize, TSHIRT_SIZES);
+      const genderSelect = labeledSelect("Gender", camper.gender, ["Male", "Female"], "Select gender");
+      const tshirtSelect = labeledSelect("T-shirt size", camper.tshirtSize, TSHIRT_SIZES, "Select a size");
       const emergencyInput = labeledInput("Emergency contact (name & phone)", "text", camper.emergencyContact);
       const notesInput = labeledTextarea("Allergies or medical notes", camper.notes);
 
-      [nameInput, ageInput, tshirtSelect, emergencyInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
+      [nameInput, ageInput, genderSelect, tshirtSelect, emergencyInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
 
       let alreadyRegistered = camper.lastRegisteredYear === CURRENT_YEAR;
       let dirty = false;
@@ -154,6 +156,7 @@
       function isValid() {
         return nameInput.input.value.trim() !== "" &&
           Number(ageInput.input.value) > 0 &&
+          genderSelect.input.value !== "" &&
           tshirtSelect.input.value !== "" &&
           emergencyInput.input.value.trim() !== "";
       }
@@ -171,7 +174,7 @@
         }
       }
 
-      [nameInput.input, ageInput.input, tshirtSelect.input, emergencyInput.input, notesInput.input]
+      [nameInput.input, ageInput.input, genderSelect.input, tshirtSelect.input, emergencyInput.input, notesInput.input]
         .forEach((el) => {
           el.addEventListener("input", () => {
             dirty = true;
@@ -188,6 +191,7 @@
           await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
             camperName: nameInput.input.value.trim(),
             camperAge: Number(ageInput.input.value),
+            gender: genderSelect.input.value,
             tshirtSize: tshirtSelect.input.value,
             emergencyContact: emergencyInput.input.value.trim(),
             notes: notesInput.input.value.trim()
@@ -215,6 +219,7 @@
           await addDoc(collection(db, "registrations"), {
             camperName: nameInput.input.value.trim(),
             camperAge: Number(ageInput.input.value),
+            gender: genderSelect.input.value,
             tshirtSize: tshirtSelect.input.value,
             parentName: parentData.parentName || "",
             parentEmail: currentUser.email,
@@ -311,7 +316,7 @@
       return { wrapper, input };
     }
 
-    function labeledSelect(labelText, value, options) {
+    function labeledSelect(labelText, value, options, placeholder) {
       const wrapper = document.createElement("div");
       wrapper.style.marginTop = "0.75rem";
       const label = document.createElement("label");
@@ -321,7 +326,7 @@
       const input = document.createElement("select");
       const blank = document.createElement("option");
       blank.value = "";
-      blank.textContent = "Select a size";
+      blank.textContent = placeholder || "Select an option";
       input.appendChild(blank);
       options.forEach((opt) => {
         const option = document.createElement("option");
