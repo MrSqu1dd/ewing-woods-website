@@ -33,20 +33,20 @@
   </div>
 
   <main>
-    <p class="reveal">
+    <p class="reveal" id="about-intro">
       Ewing Woods Youth Camp is a Christian summer camp that runs for one week each
       summer, bringing campers together for a week of outdoor adventure,
       teamwork, and fun.
     </p>
 
     <h2 class="reveal">Our Mission</h2>
-    <p class="reveal">
+    <p class="reveal" id="about-mission">
       Campers experience an intense encounter with God's word in the midst of
       extreme fun.
     </p>
 
     <h2 class="reveal">A Letter From Our Director</h2>
-    <div class="info-box reveal">
+    <div class="info-box reveal" id="director-letter">
       <p>Dear campers/parents,</p>
       <p>
         My name is Carter Covert, and I am honored to be the dean/director of
@@ -64,7 +64,7 @@
     </div>
 
     <h2 class="reveal">Who Can Attend</h2>
-    <p class="reveal">
+    <p class="reveal" id="who-can-attend">
       Campers must be at least 11 years old, or entering 6th grade, through
       12th grade (as of fall 2026).
     </p>
@@ -83,5 +83,48 @@
   </footer>
 
   <script src="scripts.js"></script>
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "siteContent", "about"));
+        if (!snap.exists()) return;
+        const data = snap.data();
+
+        if (data.introText) {
+          document.getElementById("about-intro").textContent = data.introText;
+        }
+
+        if (data.missionText) {
+          document.getElementById("about-mission").textContent = data.missionText;
+        }
+
+        if (data.whoCanAttend) {
+          document.getElementById("who-can-attend").textContent = data.whoCanAttend;
+        }
+
+        if (data.letterBody) {
+          const letterEl = document.getElementById("director-letter");
+          letterEl.innerHTML = "";
+          data.letterBody.split(/\n\s*\n/).forEach((para) => {
+            const p = document.createElement("p");
+            p.textContent = para.trim();
+            letterEl.appendChild(p);
+          });
+          if (data.letterSignoff) {
+            const signoff = document.createElement("p");
+            const strong = document.createElement("strong");
+            strong.textContent = "— " + data.letterSignoff;
+            signoff.appendChild(strong);
+            letterEl.appendChild(signoff);
+          }
+        }
+      } catch (err) {
+        // Keep the default placeholder content shown in the HTML if this fails.
+      }
+    })();
+  </script>
 </body>
 </html>

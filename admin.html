@@ -16,6 +16,7 @@
       <li><a href="index.html">Home</a></li>
       <li id="manage-staff-nav-item" style="display: none;"><a href="manage-staff.html">Manage Staff</a></li>
       <li id="manage-schedule-nav-item" style="display: none;"><a href="manage-schedule.html">Edit Schedule</a></li>
+      <li id="manage-about-nav-item" style="display: none;"><a href="manage-about.html">Edit About</a></li>
       <li><a href="#" id="logout-link">Log Out</a></li>
     </ul>
   </nav>
@@ -115,6 +116,7 @@
       if (isAdmin) {
         document.getElementById("manage-staff-nav-item").style.display = "list-item";
         document.getElementById("manage-schedule-nav-item").style.display = "list-item";
+        document.getElementById("manage-about-nav-item").style.display = "list-item";
       }
 
       await loadRegistrations();

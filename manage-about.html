@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit About Page | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="admin.html">Registrations</a></li>
+      <li><a href="#" id="logout-link">Log Out</a></li>
+    </ul>
+  </nav>
+
+  <main class="wide">
+    <h1>Edit About Page</h1>
+    <p id="access-status"></p>
+
+    <form id="about-form" style="max-width: 640px; display: none;" data-visible="false">
+      <label for="intro-text">Intro paragraph</label>
+      <textarea id="intro-text" rows="3"></textarea>
+
+      <label for="mission-text">Mission statement</label>
+      <textarea id="mission-text" rows="2"></textarea>
+
+      <label for="letter-body">Director's letter (leave a blank line between paragraphs)</label>
+      <textarea id="letter-body" rows="8"></textarea>
+
+      <label for="letter-signoff">Signed by</label>
+      <input type="text" id="letter-signoff" placeholder="e.g. Carter Covert, Camp Director">
+
+      <label for="who-can-attend">Who can attend</label>
+      <textarea id="who-can-attend" rows="2"></textarea>
+
+      <button type="submit" class="btn" style="margin-top: 1.5rem;">Save About Page</button>
+    </form>
+    <p id="form-status" role="status"></p>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp</p>
+  </footer>
+
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const accessStatus = document.getElementById("access-status");
+    const form = document.getElementById("about-form");
+    const formStatus = document.getElementById("form-status");
+
+    const introInput = document.getElementById("intro-text");
+    const missionInput = document.getElementById("mission-text");
+    const letterBodyInput = document.getElementById("letter-body");
+    const letterSignoffInput = document.getElementById("letter-signoff");
+    const whoCanAttendInput = document.getElementById("who-can-attend");
+
+    const aboutDocRef = doc(db, "siteContent", "about");
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "admin-login.html";
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const role = await getStaffRole(user);
+      if (role !== "admin") {
+        accessStatus.textContent = "Only admins can edit the About page.";
+        await signOut(auth);
+        return;
+      }
+
+      form.style.display = "flex";
+      await loadAbout();
+    });
+
+    async function getStaffRole(user) {
+      try {
+        const snap = await getDoc(doc(db, "staffRoles", user.email.toLowerCase()));
+        return snap.exists() ? snap.data().role : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function loadAbout() {
+      const snap = await getDoc(aboutDocRef);
+      const data = snap.exists() ? snap.data() : {};
+
+      introInput.value = data.introText || "";
+      missionInput.value = data.missionText || "";
+      letterBodyInput.value = data.letterBody || "";
+      letterSignoffInput.value = data.letterSignoff || "";
+      whoCanAttendInput.value = data.whoCanAttend || "";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      formStatus.textContent = "Saving...";
+      try {
+        await setDoc(aboutDocRef, {
+          introText: introInput.value.trim(),
+          missionText: missionInput.value.trim(),
+          letterBody: letterBodyInput.value.trim(),
+          letterSignoff: letterSignoffInput.value.trim(),
+          whoCanAttend: whoCanAttendInput.value.trim()
+        }, { merge: true });
+        formStatus.textContent = "Saved.";
+      } catch (err) {
+        formStatus.textContent = "Could not save: " + (err.message || "unknown error");
+      }
+    });
+  </script>
+</body>
+</html>
