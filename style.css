@@ -184,9 +184,14 @@ nav a.active::after {
 }
 
 main {
-  max-width: 900px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 3rem 1.5rem;
+}
+
+main > p,
+main > section > p {
+  max-width: 72ch;
 }
 
 main.wide {
@@ -219,7 +224,7 @@ main h2 {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
 }
@@ -269,6 +274,7 @@ th {
 }
 
 .info-box {
+  max-width: 70ch;
   background: var(--green-light);
   border-left: 4px solid var(--green);
   padding: 1rem 1.5rem;
@@ -320,7 +326,7 @@ form .btn {
 
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   margin-top: 1.5rem;
 }
