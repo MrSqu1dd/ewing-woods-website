@@ -26,8 +26,14 @@
       <h2>Session Dates</h2>
       <p>Shown on the Home page and at the top of the Schedule page.</p>
       <form id="dates-form" style="max-width: 480px;">
-        <label for="session-dates">Session dates text</label>
-        <input type="text" id="session-dates" placeholder="e.g. August 3–9, 2026">
+        <label for="session-start-date">Start date</label>
+        <input type="date" id="session-start-date">
+
+        <label for="session-end-date">End date</label>
+        <input type="date" id="session-end-date">
+
+        <p style="color: var(--text-muted); margin-top: 0.75rem;">Preview: <strong id="dates-preview">&mdash;</strong></p>
+
         <button type="submit" class="btn" style="margin-top: 1rem;">Save Session Dates</button>
       </form>
       <p id="dates-status" role="status"></p>
@@ -65,7 +71,9 @@
     const pageContent = document.getElementById("page-content");
 
     const datesForm = document.getElementById("dates-form");
-    const sessionDatesInput = document.getElementById("session-dates");
+    const startDateInput = document.getElementById("session-start-date");
+    const endDateInput = document.getElementById("session-end-date");
+    const datesPreview = document.getElementById("dates-preview");
     const datesStatus = document.getElementById("dates-status");
 
     const scheduleRows = document.getElementById("schedule-rows");
@@ -115,7 +123,9 @@
       const snap = await getDoc(scheduleDocRef);
       const data = snap.exists() ? snap.data() : {};
 
-      sessionDatesInput.value = data.sessionDates || "";
+      startDateInput.value = data.startDate || "";
+      endDateInput.value = data.endDate || "";
+      updateDatesPreview();
       activitiesInput.value = data.activitiesOffered || "";
 
       scheduleRows.innerHTML = "";
@@ -161,14 +171,48 @@
 
     addRowBtn.addEventListener("click", () => addScheduleRow("", ""));
 
+    function formatDateRange(startISO, endISO) {
+      if (!startISO || !endISO) return "";
+      const start = new Date(startISO + "T00:00:00");
+      const end = new Date(endISO + "T00:00:00");
+      const startMonth = start.toLocaleDateString(undefined, { month: "long" });
+      const endMonth = end.toLocaleDateString(undefined, { month: "long" });
+      const startDay = start.getDate();
+      const endDay = end.getDate();
+      const startYear = start.getFullYear();
+      const endYear = end.getFullYear();
+
+      if (startYear !== endYear) {
+        return `${startMonth} ${startDay}, ${startYear} – ${endMonth} ${endDay}, ${endYear}`;
+      }
+      if (startMonth !== endMonth) {
+        return `${startMonth} ${startDay} – ${endMonth} ${endDay}, ${startYear}`;
+      }
+      return `${startMonth} ${startDay}–${endDay}, ${startYear}`;
+    }
+
+    function updateDatesPreview() {
+      const formatted = formatDateRange(startDateInput.value, endDateInput.value);
+      datesPreview.textContent = formatted || "—";
+    }
+
+    startDateInput.addEventListener("input", updateDatesPreview);
+    endDateInput.addEventListener("input", updateDatesPreview);
+
     datesForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       datesStatus.textContent = "Saving...";
+      const sessionDates = formatDateRange(startDateInput.value, endDateInput.value);
       try {
-        await setDoc(scheduleDocRef, { sessionDates: sessionDatesInput.value.trim() }, { merge: true });
+        await setDoc(scheduleDocRef, {
+          startDate: startDateInput.value,
+          endDate: endDateInput.value,
+          sessionDates
+        }, { merge: true });
         datesStatus.textContent = "Saved.";
       } catch (err) {
-        datesStatus.textContent = "Could not save. Please try again.";
+        console.error("[debug] save session dates error:", err.code, err.message);
+        datesStatus.textContent = "Could not save: " + (err.message || "unknown error");
       }
     });
 
@@ -179,7 +223,8 @@
         await setDoc(scheduleDocRef, { activitiesOffered: activitiesInput.value.trim() }, { merge: true });
         activitiesStatus.textContent = "Saved.";
       } catch (err) {
-        activitiesStatus.textContent = "Could not save. Please try again.";
+        console.error("[debug] save activities error:", err.code, err.message);
+        activitiesStatus.textContent = "Could not save: " + (err.message || "unknown error");
       }
     });
 
@@ -199,7 +244,8 @@
         await setDoc(scheduleDocRef, { dailySchedule }, { merge: true });
         scheduleStatus.textContent = "Saved.";
       } catch (err) {
-        scheduleStatus.textContent = "Could not save. Please try again.";
+        console.error("[debug] save daily schedule error:", err.code, err.message);
+        scheduleStatus.textContent = "Could not save: " + (err.message || "unknown error");
       }
     });
   </script>
