@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Staff | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="admin.html">Registrations</a></li>
+      <li><a href="#" id="logout-link">Log Out</a></li>
+    </ul>
+  </nav>
+
+  <main class="wide">
+    <h1>Staff &amp; Admin Accounts</h1>
+    <p id="access-status"></p>
+
+    <div id="page-content" style="display: none;">
+      <h2>Add New Account</h2>
+      <form id="add-form" style="max-width: 480px;">
+        <label for="new-email">Email</label>
+        <input type="email" id="new-email" required>
+
+        <label for="new-role">Role</label>
+        <select id="new-role">
+          <option value="staff">Staff (view-only)</option>
+          <option value="admin">Admin (full access)</option>
+        </select>
+
+        <button type="submit" class="btn">Create Account &amp; Send Invite</button>
+      </form>
+      <p id="add-status" role="status"></p>
+
+      <h2>Existing Accounts</h2>
+      <p id="list-status">Loading...</p>
+      <div class="data-table-wrap">
+        <table id="staff-table" style="display: none;">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="staff-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp</p>
+  </footer>
+
+  <script type="module">
+    import { firebaseConfig, auth, db } from "./firebase-config.js";
+    import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import {
+      getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import {
+      doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const accessStatus = document.getElementById("access-status");
+    const pageContent = document.getElementById("page-content");
+    const addForm = document.getElementById("add-form");
+    const addStatus = document.getElementById("add-status");
+    const listStatus = document.getElementById("list-status");
+    const staffTable = document.getElementById("staff-table");
+    const staffBody = document.getElementById("staff-body");
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "admin-login.html";
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const role = await getStaffRole(user);
+      if (role !== "admin") {
+        accessStatus.textContent = "Only admins can manage staff accounts.";
+        await signOut(auth);
+        return;
+      }
+
+      pageContent.style.display = "block";
+      await loadStaffList();
+    });
+
+    async function getStaffRole(user) {
+      try {
+        const snap = await getDoc(doc(db, "staffRoles", user.email.toLowerCase()));
+        return snap.exists() ? snap.data().role : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    addForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("new-email").value.trim().toLowerCase();
+      const role = document.getElementById("new-role").value;
+      addStatus.textContent = "Creating account...";
+
+      const secondaryApp = initializeApp(firebaseConfig, "StaffCreate-" + Date.now());
+      const secondaryAuth = getAuth(secondaryApp);
+
+      try {
+        const tempPassword = crypto.randomUUID();
+        await createUserWithEmailAndPassword(secondaryAuth, email, tempPassword);
+        await sendPasswordResetEmail(secondaryAuth, email);
+        await setDoc(doc(db, "staffRoles", email), { role });
+        addStatus.textContent = `Account created for ${email}. A password-setup email has been sent to them.`;
+        addForm.reset();
+        await loadStaffList();
+      } catch (err) {
+        if (err.code === "auth/email-already-in-use") {
+          try {
+            await setDoc(doc(db, "staffRoles", email), { role });
+            addStatus.textContent = `${email} already had a login — dashboard role set to ${role}.`;
+            addForm.reset();
+            await loadStaffList();
+          } catch (err2) {
+            addStatus.textContent = "Could not update that account's role.";
+          }
+        } else {
+          addStatus.textContent = "Could not create account: " + err.message;
+        }
+      } finally {
+        await signOut(secondaryAuth);
+        await deleteApp(secondaryApp);
+      }
+    });
+
+    async function loadStaffList() {
+      const snap = await getDocs(collection(db, "staffRoles"));
+      staffBody.innerHTML = "";
+
+      if (snap.empty) {
+        listStatus.textContent = "No staff or admin accounts yet.";
+        staffTable.style.display = "none";
+        return;
+      }
+
+      snap.forEach((docSnap) => {
+        const email = docSnap.id;
+        const data = docSnap.data();
+        const row = document.createElement("tr");
+
+        const emailCell = document.createElement("td");
+        emailCell.textContent = email;
+        row.appendChild(emailCell);
+
+        const roleCell = document.createElement("td");
+        const roleSelect = document.createElement("select");
+        roleSelect.className = "table-input";
+        [["admin", "Admin"], ["staff", "Staff (view-only)"]].forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          if (value === data.role) option.selected = true;
+          roleSelect.appendChild(option);
+        });
+        roleCell.appendChild(roleSelect);
+        row.appendChild(roleCell);
+
+        const actionsCell = document.createElement("td");
+        const saveBtn = document.createElement("button");
+        saveBtn.className = "toggle-btn";
+        saveBtn.textContent = "Save";
+        saveBtn.addEventListener("click", async () => {
+          saveBtn.disabled = true;
+          await updateDoc(doc(db, "staffRoles", email), { role: roleSelect.value });
+          saveBtn.textContent = "Saved!";
+          setTimeout(() => (saveBtn.textContent = "Save"), 1500);
+          saveBtn.disabled = false;
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danger-btn";
+        removeBtn.style.marginLeft = "0.5rem";
+        removeBtn.textContent = "Remove Access";
+        removeBtn.addEventListener("click", async () => {
+          if (!window.confirm(`Remove dashboard access for ${email}? They will no longer be able to log in to the staff dashboard. (Their login itself isn't deleted, only their access.)`)) return;
+          removeBtn.disabled = true;
+          await deleteDoc(doc(db, "staffRoles", email));
+          await loadStaffList();
+        });
+
+        actionsCell.appendChild(saveBtn);
+        actionsCell.appendChild(removeBtn);
+        row.appendChild(actionsCell);
+
+        staffBody.appendChild(row);
+      });
+
+      listStatus.style.display = "none";
+      staffTable.style.display = "table";
+    }
+  </script>
+</body>
+</html>
