@@ -61,7 +61,7 @@
     </div>
 
     <div class="info-box reveal">
-      <strong>This Year's Session:</strong> August 3&ndash;9, 2026 (placeholder) &middot;
+      <strong>This Year's Session:</strong> <span id="session-dates">August 3&ndash;9, 2026 (placeholder)</span> &middot;
       Ewing Woods Campground &middot; Ages 11&ndash;18 (6th&ndash;12th grade)
     </div>
   </main>
@@ -71,5 +71,20 @@
   </footer>
 
   <script src="scripts.js"></script>
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "siteContent", "schedule"));
+        if (snap.exists() && snap.data().sessionDates) {
+          document.getElementById("session-dates").textContent = snap.data().sessionDates;
+        }
+      } catch (err) {
+        // Keep the default placeholder text shown in the HTML if this fails.
+      }
+    })();
+  </script>
 </body>
 </html>

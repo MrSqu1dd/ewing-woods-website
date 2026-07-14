@@ -29,7 +29,7 @@
 
   <main>
     <div class="info-box reveal">
-      <strong>Session Dates (placeholder):</strong> August 3&ndash;9, 2026
+      <strong>Session Dates:</strong> <span id="session-dates">August 3&ndash;9, 2026 (placeholder)</span>
     </div>
 
     <h2 class="reveal">Sample Daily Schedule</h2>
@@ -37,7 +37,7 @@
       <thead>
         <tr><th>Time</th><th>Activity</th></tr>
       </thead>
-      <tbody>
+      <tbody id="schedule-body">
         <tr><td>7:30 AM</td><td>Wake up &amp; cabin cleanup</td></tr>
         <tr><td>8:00 AM</td><td>Breakfast</td></tr>
         <tr><td>9:00 AM</td><td>Morning activity block (canoeing, archery, hiking)</td></tr>
@@ -51,7 +51,7 @@
     </table>
 
     <h2 class="reveal">Activities Offered</h2>
-    <p class="reveal">Canoeing &middot; Archery &middot; Hiking &middot; Arts &amp; Crafts &middot; Campfires &middot; Swimming &middot; Team Sports</p>
+    <p class="reveal" id="activities-offered">Canoeing &middot; Archery &middot; Hiking &middot; Arts &amp; Crafts &middot; Campfires &middot; Swimming &middot; Team Sports</p>
   </main>
 
   <footer>
@@ -59,5 +59,42 @@
   </footer>
 
   <script src="scripts.js"></script>
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "siteContent", "schedule"));
+        if (!snap.exists()) return;
+        const data = snap.data();
+
+        if (data.sessionDates) {
+          document.getElementById("session-dates").textContent = data.sessionDates;
+        }
+
+        if (data.activitiesOffered) {
+          document.getElementById("activities-offered").textContent = data.activitiesOffered;
+        }
+
+        if (Array.isArray(data.dailySchedule) && data.dailySchedule.length > 0) {
+          const tbody = document.getElementById("schedule-body");
+          tbody.innerHTML = "";
+          data.dailySchedule.forEach((row) => {
+            const tr = document.createElement("tr");
+            const timeCell = document.createElement("td");
+            timeCell.textContent = row.time || "";
+            const activityCell = document.createElement("td");
+            activityCell.textContent = row.activity || "";
+            tr.appendChild(timeCell);
+            tr.appendChild(activityCell);
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) {
+        // Keep the default placeholder content shown in the HTML if this fails.
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Schedule | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="admin.html">Registrations</a></li>
+      <li><a href="#" id="logout-link">Log Out</a></li>
+    </ul>
+  </nav>
+
+  <main class="wide">
+    <h1>Edit Schedule &amp; Camp Dates</h1>
+    <p id="access-status"></p>
+
+    <div id="page-content" style="display: none;">
+      <h2>Session Dates</h2>
+      <p>Shown on the Home page and at the top of the Schedule page.</p>
+      <form id="dates-form" style="max-width: 480px;">
+        <label for="session-dates">Session dates text</label>
+        <input type="text" id="session-dates" placeholder="e.g. August 3–9, 2026">
+        <button type="submit" class="btn" style="margin-top: 1rem;">Save Session Dates</button>
+      </form>
+      <p id="dates-status" role="status"></p>
+
+      <h2>Daily Schedule</h2>
+      <p>Each row is a time and an activity, shown in order on the Schedule page.</p>
+      <div id="schedule-rows"></div>
+      <button id="add-row-btn" class="toggle-btn" style="margin-top: 1rem;">+ Add Row</button>
+
+      <h2 style="margin-top: 2rem;">Activities Offered</h2>
+      <form id="activities-form" style="max-width: 640px;">
+        <label for="activities-offered">Activities list (shown as one line, separated by &middot;)</label>
+        <input type="text" id="activities-offered" placeholder="e.g. Canoeing, Archery, Hiking">
+        <button type="submit" class="btn" style="margin-top: 1rem;">Save Activities</button>
+      </form>
+      <p id="activities-status" role="status"></p>
+
+      <div style="margin-top: 2rem;">
+        <button id="save-schedule-btn" class="btn">Save Daily Schedule</button>
+        <p id="schedule-status" role="status"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp</p>
+  </footer>
+
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const accessStatus = document.getElementById("access-status");
+    const pageContent = document.getElementById("page-content");
+
+    const datesForm = document.getElementById("dates-form");
+    const sessionDatesInput = document.getElementById("session-dates");
+    const datesStatus = document.getElementById("dates-status");
+
+    const scheduleRows = document.getElementById("schedule-rows");
+    const addRowBtn = document.getElementById("add-row-btn");
+    const saveScheduleBtn = document.getElementById("save-schedule-btn");
+    const scheduleStatus = document.getElementById("schedule-status");
+
+    const activitiesForm = document.getElementById("activities-form");
+    const activitiesInput = document.getElementById("activities-offered");
+    const activitiesStatus = document.getElementById("activities-status");
+
+    const scheduleDocRef = doc(db, "siteContent", "schedule");
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "admin-login.html";
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const role = await getStaffRole(user);
+      if (role !== "admin") {
+        accessStatus.textContent = "Only admins can edit the schedule.";
+        await signOut(auth);
+        return;
+      }
+
+      pageContent.style.display = "block";
+      await loadSchedule();
+    });
+
+    async function getStaffRole(user) {
+      try {
+        const snap = await getDoc(doc(db, "staffRoles", user.email.toLowerCase()));
+        return snap.exists() ? snap.data().role : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function loadSchedule() {
+      const snap = await getDoc(scheduleDocRef);
+      const data = snap.exists() ? snap.data() : {};
+
+      sessionDatesInput.value = data.sessionDates || "";
+      activitiesInput.value = data.activitiesOffered || "";
+
+      scheduleRows.innerHTML = "";
+      const rows = Array.isArray(data.dailySchedule) ? data.dailySchedule : [];
+      if (rows.length === 0) {
+        addScheduleRow("", "");
+      } else {
+        rows.forEach((row) => addScheduleRow(row.time, row.activity));
+      }
+    }
+
+    function addScheduleRow(time, activity) {
+      const rowDiv = document.createElement("div");
+      rowDiv.style.display = "flex";
+      rowDiv.style.gap = "0.5rem";
+      rowDiv.style.marginTop = "0.5rem";
+
+      const timeInput = document.createElement("input");
+      timeInput.type = "text";
+      timeInput.placeholder = "Time (e.g. 7:30 AM)";
+      timeInput.value = time || "";
+      timeInput.style.maxWidth = "180px";
+      timeInput.className = "schedule-time-input";
+
+      const activityInput = document.createElement("input");
+      activityInput.type = "text";
+      activityInput.placeholder = "Activity";
+      activityInput.value = activity || "";
+      activityInput.style.flex = "1";
+      activityInput.className = "schedule-activity-input";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "danger-btn";
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => rowDiv.remove());
+
+      rowDiv.appendChild(timeInput);
+      rowDiv.appendChild(activityInput);
+      rowDiv.appendChild(removeBtn);
+      scheduleRows.appendChild(rowDiv);
+    }
+
+    addRowBtn.addEventListener("click", () => addScheduleRow("", ""));
+
+    datesForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      datesStatus.textContent = "Saving...";
+      try {
+        await setDoc(scheduleDocRef, { sessionDates: sessionDatesInput.value.trim() }, { merge: true });
+        datesStatus.textContent = "Saved.";
+      } catch (err) {
+        datesStatus.textContent = "Could not save. Please try again.";
+      }
+    });
+
+    activitiesForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      activitiesStatus.textContent = "Saving...";
+      try {
+        await setDoc(scheduleDocRef, { activitiesOffered: activitiesInput.value.trim() }, { merge: true });
+        activitiesStatus.textContent = "Saved.";
+      } catch (err) {
+        activitiesStatus.textContent = "Could not save. Please try again.";
+      }
+    });
+
+    saveScheduleBtn.addEventListener("click", async () => {
+      scheduleStatus.textContent = "Saving...";
+      const times = scheduleRows.querySelectorAll(".schedule-time-input");
+      const activities = scheduleRows.querySelectorAll(".schedule-activity-input");
+      const dailySchedule = [];
+      for (let i = 0; i < times.length; i++) {
+        const time = times[i].value.trim();
+        const activity = activities[i].value.trim();
+        if (time || activity) {
+          dailySchedule.push({ time, activity });
+        }
+      }
+      try {
+        await setDoc(scheduleDocRef, { dailySchedule }, { merge: true });
+        scheduleStatus.textContent = "Saved.";
+      } catch (err) {
+        scheduleStatus.textContent = "Could not save. Please try again.";
+      }
+    });
+  </script>
+</body>
+</html>
