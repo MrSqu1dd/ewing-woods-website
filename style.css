@@ -2,6 +2,12 @@
   --green: #2e7d32;
   --green-dark: #1b5e20;
   --green-light: #e8f5e9;
+  --gold-light: #fdf1d6;
+  --gold-dark: #a6740a;
+  --blue-light: #e3f0fb;
+  --blue-dark: #2c6e9e;
+  --coral-light: #fde8e0;
+  --coral-dark: #c1543a;
   --bg: #f7f7f2;
   --border: #e2e8e2;
   --text: #24291f;
@@ -247,6 +253,46 @@ main h2 {
 .card h3 {
   margin-top: 0;
   color: var(--green-dark);
+}
+
+.card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+  transition: transform 0.25s ease;
+}
+
+.card:hover .card-icon {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.card-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.card-icon.icon-green {
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+.card-icon.icon-gold {
+  background: var(--gold-light);
+  color: var(--gold-dark);
+}
+
+.card-icon.icon-blue {
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+
+.card-icon.icon-coral {
+  background: var(--coral-light);
+  color: var(--coral-dark);
 }
 
 table {
