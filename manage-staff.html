@@ -60,7 +60,7 @@
   </footer>
 
   <script type="module">
-    import { firebaseConfig, auth, db } from "./firebase-config.js";
+    import { firebaseConfig, app, auth, db } from "./firebase-config.js";
     import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import {
       getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged
@@ -68,6 +68,10 @@
     import {
       doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-functions.js";
+
+    const functions = getFunctions(app);
+    const deleteStaffAccount = httpsCallable(functions, "deleteStaffAccount");
 
     const accessStatus = document.getElementById("access-status");
     const pageContent = document.getElementById("page-content");
@@ -200,8 +204,25 @@
           await loadStaffList();
         });
 
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "danger-btn";
+        deleteBtn.style.marginLeft = "0.5rem";
+        deleteBtn.textContent = "Delete Account";
+        deleteBtn.addEventListener("click", async () => {
+          if (!window.confirm(`Permanently delete ${email}'s login and all dashboard access? This cannot be undone.`)) return;
+          deleteBtn.disabled = true;
+          try {
+            await deleteStaffAccount({ email });
+            await loadStaffList();
+          } catch (err) {
+            alert("Could not delete account: " + err.message);
+            deleteBtn.disabled = false;
+          }
+        });
+
         actionsCell.appendChild(saveBtn);
         actionsCell.appendChild(removeBtn);
+        actionsCell.appendChild(deleteBtn);
         row.appendChild(actionsCell);
 
         staffBody.appendChild(row);
