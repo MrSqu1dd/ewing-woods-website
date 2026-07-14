@@ -1,11 +1,14 @@
 :root {
   --green: #2e7d32;
   --green-dark: #1b5e20;
-  --green-light: #e8f5e9;
-  --bg: #ffffff;
-  --border: #e2e8e2;
-  --text: #24291f;
-  --text-muted: #5f6a5a;
+  --green-light: #e9f1e2;
+  --brown: #6f4e37;
+  --brown-dark: #4a3222;
+  --brown-light: #f0e4d0;
+  --bg: #faf6ee;
+  --border: #ddd0b8;
+  --text: #2e2a22;
+  --text-muted: #6b6152;
   --font-heading: "Fraunces", Georgia, serif;
   --font-body: "Inter", system-ui, sans-serif;
 }
@@ -24,7 +27,9 @@ body {
   padding: 0;
   color: var(--text);
   background-color: var(--bg);
-  background-image: radial-gradient(circle at top right, var(--green-light) 0%, transparent 55%);
+  background-image:
+    radial-gradient(circle at top right, var(--green-light) 0%, transparent 55%),
+    radial-gradient(circle at bottom left, var(--brown-light) 0%, transparent 50%);
   background-attachment: fixed;
   background-repeat: no-repeat;
   line-height: 1.6;
@@ -46,9 +51,9 @@ nav {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(250, 246, 238, 0.92);
   backdrop-filter: blur(6px);
-  border-bottom: 2px solid var(--green-light);
+  border-bottom: 2px solid var(--border);
   padding: 1rem 2rem;
 }
 
@@ -112,7 +117,7 @@ nav a.active::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(27, 94, 32, 0.85) 0%, rgba(20, 60, 22, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(27, 94, 32, 0.82) 0%, rgba(74, 50, 34, 0.88) 100%);
 }
 
 .hero-content {
@@ -200,7 +205,7 @@ main h2 {
 }
 
 .page-header {
-  background: linear-gradient(135deg, var(--green-light) 0%, #ffffff 100%);
+  background: linear-gradient(135deg, var(--green-light) 0%, var(--bg) 100%);
   border-bottom: 1px solid var(--border);
   padding: 3rem 1.5rem 2.5rem;
   text-align: center;
@@ -230,13 +235,13 @@ main h2 {
   border-top: 3px solid var(--green);
   border-radius: 10px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(74, 50, 34, 0.06);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 24px rgba(27, 94, 32, 0.12);
+  box-shadow: 0 12px 24px rgba(74, 50, 34, 0.15);
 }
 
 .card h3 {
@@ -257,8 +262,8 @@ th, td {
 }
 
 th {
-  background: var(--green-light);
-  color: var(--green-dark);
+  background: var(--brown-light);
+  color: var(--brown-dark);
 }
 
 .price {
@@ -336,7 +341,7 @@ form .btn {
 
 .gallery img:hover {
   transform: scale(1.03);
-  box-shadow: 0 10px 24px rgba(27, 94, 32, 0.18);
+  box-shadow: 0 10px 24px rgba(74, 50, 34, 0.2);
 }
 
 .rules-list {
