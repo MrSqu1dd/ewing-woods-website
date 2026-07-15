@@ -174,15 +174,26 @@
     function renderViewRow(row, id, reg) {
       row.innerHTML = "";
 
-      [reg.camperName, reg.camperAge, reg.gender, reg.tshirtSize, reg.parentName, reg.parentEmail,
-       reg.parentPhone, formatEmergencyContact(reg), reg.notes, formatDate(reg.submittedAt)]
-        .forEach((value) => {
-          const td = document.createElement("td");
-          td.textContent = value ?? "";
-          row.appendChild(td);
-        });
+      [
+        ["Camper", reg.camperName],
+        ["Age", reg.camperAge],
+        ["Gender", reg.gender],
+        ["T-Shirt", reg.tshirtSize],
+        ["Parent", reg.parentName],
+        ["Parent Email", reg.parentEmail],
+        ["Parent Phone", reg.parentPhone],
+        ["Emergency Contact", formatEmergencyContact(reg)],
+        ["Notes", reg.notes],
+        ["Registered On", formatDate(reg.submittedAt)]
+      ].forEach(([label, value]) => {
+        const td = document.createElement("td");
+        td.textContent = value ?? "";
+        td.dataset.label = label;
+        row.appendChild(td);
+      });
 
       const paidCell = document.createElement("td");
+      paidCell.dataset.label = "Paid";
       const paidLabel = document.createElement("span");
       paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
       paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
@@ -204,6 +215,7 @@
       row.appendChild(paidCell);
 
       const actionsCell = document.createElement("td");
+      actionsCell.dataset.label = "Actions";
       if (isAdmin) {
         const editBtn = document.createElement("button");
         editBtn.className = "toggle-btn";
@@ -258,27 +270,39 @@
       emergencyPhoneInput.style.marginTop = "0.25rem";
       const notesInput = createTextareaField(reg.notes, "notes");
 
-      [nameInput, ageInput, genderSelect, tshirtSelect, parentNameInput, parentEmailInput,
-       parentPhoneInput].forEach((field) => {
+      [
+        ["Camper", nameInput],
+        ["Age", ageInput],
+        ["Gender", genderSelect],
+        ["T-Shirt", tshirtSelect],
+        ["Parent", parentNameInput],
+        ["Parent Email", parentEmailInput],
+        ["Parent Phone", parentPhoneInput]
+      ].forEach(([label, field]) => {
         const td = document.createElement("td");
+        td.dataset.label = label;
         td.appendChild(field);
         row.appendChild(td);
       });
 
       const emergencyCell = document.createElement("td");
+      emergencyCell.dataset.label = "Emergency Contact";
       emergencyCell.appendChild(emergencyNameInput);
       emergencyCell.appendChild(emergencyPhoneInput);
       row.appendChild(emergencyCell);
 
       const notesCell = document.createElement("td");
+      notesCell.dataset.label = "Notes";
       notesCell.appendChild(notesInput);
       row.appendChild(notesCell);
 
       const dateCell = document.createElement("td");
+      dateCell.dataset.label = "Registered On";
       dateCell.textContent = formatDate(reg.submittedAt);
       row.appendChild(dateCell);
 
       const paidCell = document.createElement("td");
+      paidCell.dataset.label = "Paid";
       const paidLabel = document.createElement("span");
       paidLabel.className = reg.paid ? "paid-yes" : "paid-no";
       paidLabel.textContent = reg.paid ? "Paid" : "Unpaid";
@@ -286,6 +310,7 @@
       row.appendChild(paidCell);
 
       const actionsCell = document.createElement("td");
+      actionsCell.dataset.label = "Actions";
       const saveBtn = document.createElement("button");
       saveBtn.className = "toggle-btn";
       saveBtn.textContent = "Save";
