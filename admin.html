@@ -162,11 +162,20 @@
       }
     }
 
+    function formatEmergencyContact(reg) {
+      const name = reg.emergencyContactName;
+      const phone = reg.emergencyContactPhone;
+      if (name || phone) {
+        return [name, phone].filter(Boolean).join(" — ");
+      }
+      return reg.emergencyContact || "";
+    }
+
     function renderViewRow(row, id, reg) {
       row.innerHTML = "";
 
       [reg.camperName, reg.camperAge, reg.gender, reg.tshirtSize, reg.parentName, reg.parentEmail,
-       reg.parentPhone, reg.emergencyContact, reg.notes, formatDate(reg.submittedAt)]
+       reg.parentPhone, formatEmergencyContact(reg), reg.notes, formatDate(reg.submittedAt)]
         .forEach((value) => {
           const td = document.createElement("td");
           td.textContent = value ?? "";
@@ -242,15 +251,28 @@
       const parentNameInput = createField("text", reg.parentName, "parentName");
       const parentEmailInput = createField("email", reg.parentEmail, "parentEmail");
       const parentPhoneInput = createField("tel", reg.parentPhone, "parentPhone");
-      const emergencyInput = createField("text", reg.emergencyContact, "emergencyContact");
+      const emergencyNameInput = createField("text", reg.emergencyContactName, "emergencyContactName");
+      emergencyNameInput.placeholder = "Name";
+      const emergencyPhoneInput = createField("tel", reg.emergencyContactPhone, "emergencyContactPhone");
+      emergencyPhoneInput.placeholder = "Phone";
+      emergencyPhoneInput.style.marginTop = "0.25rem";
       const notesInput = createTextareaField(reg.notes, "notes");
 
       [nameInput, ageInput, genderSelect, tshirtSelect, parentNameInput, parentEmailInput,
-       parentPhoneInput, emergencyInput, notesInput].forEach((field) => {
+       parentPhoneInput].forEach((field) => {
         const td = document.createElement("td");
         td.appendChild(field);
         row.appendChild(td);
       });
+
+      const emergencyCell = document.createElement("td");
+      emergencyCell.appendChild(emergencyNameInput);
+      emergencyCell.appendChild(emergencyPhoneInput);
+      row.appendChild(emergencyCell);
+
+      const notesCell = document.createElement("td");
+      notesCell.appendChild(notesInput);
+      row.appendChild(notesCell);
 
       const dateCell = document.createElement("td");
       dateCell.textContent = formatDate(reg.submittedAt);
@@ -277,7 +299,8 @@
           parentName: parentNameInput.value.trim(),
           parentEmail: parentEmailInput.value.trim(),
           parentPhone: parentPhoneInput.value.trim(),
-          emergencyContact: emergencyInput.value.trim(),
+          emergencyContactName: emergencyNameInput.value.trim(),
+          emergencyContactPhone: emergencyPhoneInput.value.trim(),
           notes: notesInput.value.trim()
         };
         await updateDoc(doc(db, "registrations", id), updated);

@@ -110,7 +110,8 @@
           camperAge: "",
           gender: "",
           tshirtSize: "",
-          emergencyContact: "",
+          emergencyContactName: "",
+          emergencyContactPhone: "",
           notes: "",
           lastRegisteredYear: null
         });
@@ -145,10 +146,11 @@
       const ageInput = labeledInput("Camper age", "number", camper.camperAge);
       const genderSelect = labeledSelect("Gender", camper.gender, ["Male", "Female"], "Select gender");
       const tshirtSelect = labeledSelect("T-shirt size", camper.tshirtSize, TSHIRT_SIZES, "Select a size");
-      const emergencyInput = labeledInput("Emergency contact (name & phone)", "text", camper.emergencyContact);
+      const emergencyNameInput = labeledInput("Emergency contact name", "text", camper.emergencyContactName);
+      const emergencyPhoneInput = labeledInput("Emergency contact phone", "tel", camper.emergencyContactPhone);
       const notesInput = labeledTextarea("Allergies or medical notes", camper.notes);
 
-      [nameInput, ageInput, genderSelect, tshirtSelect, emergencyInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
+      [nameInput, ageInput, genderSelect, tshirtSelect, emergencyNameInput, emergencyPhoneInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
 
       let alreadyRegistered = camper.lastRegisteredYear === CURRENT_YEAR;
       let dirty = false;
@@ -158,7 +160,8 @@
           Number(ageInput.input.value) > 0 &&
           genderSelect.input.value !== "" &&
           tshirtSelect.input.value !== "" &&
-          emergencyInput.input.value.trim() !== "";
+          emergencyNameInput.input.value.trim() !== "" &&
+          emergencyPhoneInput.input.value.trim() !== "";
       }
 
       function refreshRegisterButton() {
@@ -174,7 +177,7 @@
         }
       }
 
-      [nameInput.input, ageInput.input, genderSelect.input, tshirtSelect.input, emergencyInput.input, notesInput.input]
+      [nameInput.input, ageInput.input, genderSelect.input, tshirtSelect.input, emergencyNameInput.input, emergencyPhoneInput.input, notesInput.input]
         .forEach((el) => {
           el.addEventListener("input", () => {
             dirty = true;
@@ -192,7 +195,8 @@
           camperAge: Number(ageInput.input.value),
           gender: genderSelect.input.value,
           tshirtSize: tshirtSelect.input.value,
-          emergencyContact: emergencyInput.input.value.trim(),
+          emergencyContactName: emergencyNameInput.input.value.trim(),
+          emergencyContactPhone: emergencyPhoneInput.input.value.trim(),
           notes: notesInput.input.value.trim()
         };
         try {
@@ -235,7 +239,8 @@
             parentName: parentData.parentName || "",
             parentEmail: currentUser.email,
             parentPhone: parentData.parentPhone || "",
-            emergencyContact: emergencyInput.input.value.trim(),
+            emergencyContactName: emergencyNameInput.input.value.trim(),
+            emergencyContactPhone: emergencyPhoneInput.input.value.trim(),
             notes: notesInput.input.value.trim(),
             paid: false,
             submittedAt: serverTimestamp(),
