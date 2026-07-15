@@ -187,15 +187,21 @@
       saveBtn.textContent = "Save Camper";
       saveBtn.addEventListener("click", async () => {
         saveBtn.disabled = true;
+        const updatedFields = {
+          camperName: nameInput.input.value.trim(),
+          camperAge: Number(ageInput.input.value),
+          gender: genderSelect.input.value,
+          tshirtSize: tshirtSelect.input.value,
+          emergencyContact: emergencyInput.input.value.trim(),
+          notes: notesInput.input.value.trim()
+        };
         try {
-          await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), {
-            camperName: nameInput.input.value.trim(),
-            camperAge: Number(ageInput.input.value),
-            gender: genderSelect.input.value,
-            tshirtSize: tshirtSelect.input.value,
-            emergencyContact: emergencyInput.input.value.trim(),
-            notes: notesInput.input.value.trim()
-          });
+          await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), updatedFields);
+
+          const regQuery = query(collection(db, "registrations"), where("camperId", "==", camperId));
+          const regSnap = await getDocs(regQuery);
+          await Promise.all(regSnap.docs.map((regDoc) => updateDoc(regDoc.ref, updatedFields)));
+
           dirty = false;
           refreshRegisterButton();
           saveBtn.textContent = "Saved!";
