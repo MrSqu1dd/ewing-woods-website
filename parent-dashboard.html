@@ -152,6 +152,13 @@
 
       [nameInput, ageInput, genderSelect, tshirtSelect, emergencyNameInput, emergencyPhoneInput, notesInput].forEach((group) => card.appendChild(group.wrapper));
 
+      const requirementHint = document.createElement("p");
+      requirementHint.style.color = "var(--text-muted)";
+      requirementHint.style.fontSize = "0.85rem";
+      requirementHint.style.marginTop = "0.75rem";
+      requirementHint.textContent = "You can register this camper once every field above is filled out, except Allergies or medical notes (optional).";
+      card.appendChild(requirementHint);
+
       let alreadyRegistered = camper.lastRegisteredYear === CURRENT_YEAR;
       let dirty = false;
 
@@ -168,12 +175,15 @@
         if (alreadyRegistered) {
           registerBtn.disabled = true;
           registerBtn.textContent = `Registered for ${CURRENT_YEAR} ✓`;
+          requirementHint.style.display = "none";
         } else if (dirty || !isValid()) {
           registerBtn.disabled = true;
           registerBtn.textContent = dirty ? "Save camper info first" : `Register for ${CURRENT_YEAR} — $250`;
+          requirementHint.style.display = "block";
         } else {
           registerBtn.disabled = false;
           registerBtn.textContent = `Register for ${CURRENT_YEAR} — $250`;
+          requirementHint.style.display = "none";
         }
       }
 
