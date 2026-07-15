@@ -198,7 +198,11 @@
         try {
           await updateDoc(doc(db, "parentProfiles", currentUser.uid, "campers", camperId), updatedFields);
 
-          const regQuery = query(collection(db, "registrations"), where("camperId", "==", camperId));
+          const regQuery = query(
+            collection(db, "registrations"),
+            where("camperId", "==", camperId),
+            where("parentUid", "==", currentUser.uid)
+          );
           const regSnap = await getDocs(regQuery);
           await Promise.all(regSnap.docs.map((regDoc) => updateDoc(regDoc.ref, updatedFields)));
 
@@ -207,6 +211,7 @@
           saveBtn.textContent = "Saved!";
           setTimeout(() => (saveBtn.textContent = "Save Camper"), 1500);
         } catch (err) {
+          console.error("[debug] save camper error:", err.code, err.message);
           saveBtn.textContent = "Could not save — try again";
         } finally {
           saveBtn.disabled = false;
@@ -261,7 +266,11 @@
         if (!window.confirm(`Remove ${label}'s saved info? This will also remove them from this year's registry if registered. This cannot be undone.`)) return;
         removeBtn.disabled = true;
         try {
-          const regQuery = query(collection(db, "registrations"), where("camperId", "==", camperId));
+          const regQuery = query(
+            collection(db, "registrations"),
+            where("camperId", "==", camperId),
+            where("parentUid", "==", currentUser.uid)
+          );
           const regSnap = await getDocs(regQuery);
           console.log("[debug] matching registration docs for camperId", camperId, ":", regSnap.size);
 
