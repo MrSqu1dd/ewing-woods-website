@@ -276,6 +276,12 @@ main h2 {
   color: var(--green-dark);
 }
 
+#tshirt-summary h2 {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
 .tshirt-chips {
   display: flex;
   flex-wrap: wrap;
