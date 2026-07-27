@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <nav>
@@ -27,7 +26,7 @@
     <h1>Registrations</h1>
     <p id="role-banner" class="info-box" style="display: none;"></p>
 
-    <button id="export-excel-btn" class="btn" style="display: none;">Export to Excel</button>
+    <button id="export-btn" class="btn" style="display: none;">Export to CSV</button>
     <p id="export-status" role="status"></p>
 
     <div class="cards" id="stats-cards" style="display: none;">
@@ -89,7 +88,7 @@
     const statPaid = document.getElementById("stat-paid");
     const statUnpaid = document.getElementById("stat-unpaid");
     const roleBanner = document.getElementById("role-banner");
-    const exportBtn = document.getElementById("export-excel-btn");
+    const exportBtn = document.getElementById("export-btn");
     const exportStatus = document.getElementById("export-status");
 
     let isAdmin = false;
@@ -139,6 +138,18 @@
       }
     }
 
+    function csvEscape(value) {
+      const str = String(value ?? "");
+      if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function csvLine(values) {
+      return values.map(csvEscape).join(",");
+    }
+
     exportBtn.addEventListener("click", async () => {
       exportBtn.disabled = true;
       exportStatus.textContent = "Preparing export...";
@@ -146,41 +157,65 @@
         const regSnap = await getDocs(query(collection(db, "registrations"), orderBy("submittedAt", "desc")));
         const volSnap = await getDocs(query(collection(db, "volunteers"), orderBy("submittedAt", "desc")));
 
-        const regRows = regSnap.docs.map((d) => {
-          const r = d.data();
-          return {
-            Camper: r.camperName || "",
-            Age: r.camperAge || "",
-            Gender: r.gender || "",
-            "T-Shirt": r.tshirtSize || "",
-            Parent: r.parentName || "",
-            "Parent Email": r.parentEmail || "",
-            "Parent Phone": r.parentPhone || "",
-            "Emergency Contact": formatEmergencyContact(r),
-            Notes: r.notes || "",
-            "Registered On": formatDate(r.submittedAt),
-            Paid: r.paid ? "Paid" : "Unpaid"
-          };
+        const regs = regSnap.docs.map((d) => d.data());
+        const vols = volSnap.docs.map((d) => d.data());
+
+        const paidCount = regs.filter((r) => r.paid).length;
+        const roleCounts = {};
+        vols.forEach((v) => {
+          const role = v.role || "Unspecified";
+          roleCounts[role] = (roleCounts[role] || 0) + 1;
         });
 
-        const volRows = volSnap.docs.map((d) => {
-          const v = d.data();
-          return {
-            Name: v.name || "",
-            Email: v.email || "",
-            Phone: v.phone || "",
-            Role: v.role || "",
-            Notes: v.notes || "",
-            "Signed Up On": formatDate(v.submittedAt)
-          };
+        const lines = [];
+
+        lines.push("SUMMARY");
+        lines.push(csvLine(["Category", "Count"]));
+        lines.push(csvLine(["Total Registrations", regs.length]));
+        lines.push(csvLine(["Paid", paidCount]));
+        lines.push(csvLine(["Unpaid", regs.length - paidCount]));
+        lines.push(csvLine(["Total Volunteers", vols.length]));
+        Object.keys(roleCounts).forEach((role) => {
+          lines.push(csvLine([`Volunteers — ${role}`, roleCounts[role]]));
+        });
+        lines.push("");
+
+        lines.push("REGISTRATIONS");
+        lines.push(csvLine([
+          "Camper", "Age", "Gender", "T-Shirt", "Parent", "Parent Email", "Parent Phone",
+          "Emergency Contact", "Notes", "Registered On", "Paid"
+        ]));
+        regs.forEach((r) => {
+          lines.push(csvLine([
+            r.camperName || "", r.camperAge || "", r.gender || "", r.tshirtSize || "",
+            r.parentName || "", r.parentEmail || "", r.parentPhone || "",
+            formatEmergencyContact(r), r.notes || "", formatDate(r.submittedAt),
+            r.paid ? "Paid" : "Unpaid"
+          ]));
+        });
+        lines.push("");
+
+        lines.push("VOLUNTEERS");
+        lines.push(csvLine(["Name", "Email", "Phone", "Role", "Notes", "Signed Up On"]));
+        vols.forEach((v) => {
+          lines.push(csvLine([
+            v.name || "", v.email || "", v.phone || "", v.role || "", v.notes || "", formatDate(v.submittedAt)
+          ]));
         });
 
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(regRows), "Registrations");
-        XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(volRows), "Volunteers");
-
+        const csvContent = lines.join("\r\n");
+        const bom = String.fromCharCode(0xFEFF);
+        const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
         const dateStr = new Date().toISOString().slice(0, 10);
-        XLSX.writeFile(workbook, `ewing-woods-camp-export-${dateStr}.xlsx`);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `ewing-woods-camp-export-${dateStr}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
         exportStatus.textContent = "Export downloaded.";
       } catch (err) {
         exportStatus.textContent = "Could not export: " + (err.message || "unknown error");
