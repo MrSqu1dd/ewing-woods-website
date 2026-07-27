@@ -276,6 +276,28 @@ main h2 {
   color: var(--green-dark);
 }
 
+.tshirt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.tshirt-chip {
+  background: var(--green-light);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.tshirt-chip strong {
+  color: var(--green-dark);
+  margin-left: 0.3rem;
+}
+
 .card-icon {
   width: 56px;
   height: 56px;

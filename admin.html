@@ -96,10 +96,7 @@
 
     <div id="tshirt-summary" style="display: none; margin-top: 2rem;">
       <h2>T-Shirt Sizes</h2>
-      <table style="max-width: 400px;">
-        <thead><tr><th>Size</th><th>Count</th></tr></thead>
-        <tbody id="tshirt-summary-body"></tbody>
-      </table>
+      <div class="tshirt-chips" id="tshirt-summary-body"></div>
     </div>
 
     <p id="status">Loading...</p>
@@ -355,14 +352,10 @@
       const extraSizes = Object.keys(sizeCounts).filter((size) => !TSHIRT_SIZES.includes(size));
 
       [...orderedSizes, ...extraSizes].forEach((size) => {
-        const tr = document.createElement("tr");
-        const sizeTd = document.createElement("td");
-        sizeTd.textContent = size;
-        const countTd = document.createElement("td");
-        countTd.textContent = sizeCounts[size];
-        tr.appendChild(sizeTd);
-        tr.appendChild(countTd);
-        tshirtSummaryBody.appendChild(tr);
+        const chip = document.createElement("span");
+        chip.className = "tshirt-chip";
+        chip.innerHTML = `${size} <strong>${sizeCounts[size]}</strong>`;
+        tshirtSummaryBody.appendChild(chip);
       });
 
       tshirtSummary.style.display = Object.keys(sizeCounts).length > 0 ? "block" : "none";
