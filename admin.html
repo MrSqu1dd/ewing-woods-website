@@ -44,6 +44,14 @@
       </div>
     </div>
 
+    <div id="tshirt-summary" style="display: none; margin-top: 2rem;">
+      <h2>T-Shirt Sizes</h2>
+      <table style="max-width: 400px;">
+        <thead><tr><th>Size</th><th>Count</th></tr></thead>
+        <tbody id="tshirt-summary-body"></tbody>
+      </table>
+    </div>
+
     <p id="status">Loading...</p>
 
     <div class="data-table-wrap">
@@ -90,6 +98,8 @@
     const roleBanner = document.getElementById("role-banner");
     const exportBtn = document.getElementById("export-btn");
     const exportStatus = document.getElementById("export-status");
+    const tshirtSummary = document.getElementById("tshirt-summary");
+    const tshirtSummaryBody = document.getElementById("tshirt-summary-body");
 
     let isAdmin = false;
 
@@ -167,6 +177,14 @@
           roleCounts[role] = (roleCounts[role] || 0) + 1;
         });
 
+        const sizeCounts = {};
+        regs.forEach((r) => {
+          const size = r.tshirtSize || "Unspecified";
+          sizeCounts[size] = (sizeCounts[size] || 0) + 1;
+        });
+        const orderedSizes = TSHIRT_SIZES.filter((size) => sizeCounts[size]);
+        const extraSizes = Object.keys(sizeCounts).filter((size) => !TSHIRT_SIZES.includes(size));
+
         const lines = [];
 
         lines.push("SUMMARY");
@@ -174,6 +192,9 @@
         lines.push(csvLine(["Total Registrations", regs.length]));
         lines.push(csvLine(["Paid", paidCount]));
         lines.push(csvLine(["Unpaid", regs.length - paidCount]));
+        [...orderedSizes, ...extraSizes].forEach((size) => {
+          lines.push(csvLine([`T-Shirt — ${size}`, sizeCounts[size]]));
+        });
         lines.push(csvLine(["Total Volunteers", vols.length]));
         Object.keys(roleCounts).forEach((role) => {
           lines.push(csvLine([`Volunteers — ${role}`, roleCounts[role]]));
@@ -224,6 +245,25 @@
       }
     });
 
+    function renderTshirtSummary(sizeCounts) {
+      tshirtSummaryBody.innerHTML = "";
+      const orderedSizes = TSHIRT_SIZES.filter((size) => sizeCounts[size]);
+      const extraSizes = Object.keys(sizeCounts).filter((size) => !TSHIRT_SIZES.includes(size));
+
+      [...orderedSizes, ...extraSizes].forEach((size) => {
+        const tr = document.createElement("tr");
+        const sizeTd = document.createElement("td");
+        sizeTd.textContent = size;
+        const countTd = document.createElement("td");
+        countTd.textContent = sizeCounts[size];
+        tr.appendChild(sizeTd);
+        tr.appendChild(countTd);
+        tshirtSummaryBody.appendChild(tr);
+      });
+
+      tshirtSummary.style.display = Object.keys(sizeCounts).length > 0 ? "block" : "none";
+    }
+
     async function loadRegistrations() {
       try {
         const q = query(collection(db, "registrations"), orderBy("submittedAt", "desc"));
@@ -234,6 +274,13 @@
         statPaid.textContent = paidCount;
         statUnpaid.textContent = snapshot.size - paidCount;
         statsCards.style.display = "grid";
+
+        const sizeCounts = {};
+        snapshot.docs.forEach((d) => {
+          const size = d.data().tshirtSize || "Unspecified";
+          sizeCounts[size] = (sizeCounts[size] || 0) + 1;
+        });
+        renderTshirtSummary(sizeCounts);
 
         if (snapshot.empty) {
           statusEl.textContent = "No registrations yet.";
