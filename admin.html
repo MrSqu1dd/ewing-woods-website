@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <nav>
@@ -25,6 +26,9 @@
   <main class="wide">
     <h1>Registrations</h1>
     <p id="role-banner" class="info-box" style="display: none;"></p>
+
+    <button id="export-excel-btn" class="btn" style="display: none;">Export to Excel</button>
+    <p id="export-status" role="status"></p>
 
     <div class="cards" id="stats-cards" style="display: none;">
       <div class="card">
@@ -85,6 +89,8 @@
     const statPaid = document.getElementById("stat-paid");
     const statUnpaid = document.getElementById("stat-unpaid");
     const roleBanner = document.getElementById("role-banner");
+    const exportBtn = document.getElementById("export-excel-btn");
+    const exportStatus = document.getElementById("export-status");
 
     let isAdmin = false;
 
@@ -118,6 +124,7 @@
         document.getElementById("manage-staff-nav-item").style.display = "list-item";
         document.getElementById("manage-schedule-nav-item").style.display = "list-item";
         document.getElementById("manage-about-nav-item").style.display = "list-item";
+        exportBtn.style.display = "inline-block";
       }
 
       await loadRegistrations();
@@ -131,6 +138,56 @@
         return null;
       }
     }
+
+    exportBtn.addEventListener("click", async () => {
+      exportBtn.disabled = true;
+      exportStatus.textContent = "Preparing export...";
+      try {
+        const regSnap = await getDocs(query(collection(db, "registrations"), orderBy("submittedAt", "desc")));
+        const volSnap = await getDocs(query(collection(db, "volunteers"), orderBy("submittedAt", "desc")));
+
+        const regRows = regSnap.docs.map((d) => {
+          const r = d.data();
+          return {
+            Camper: r.camperName || "",
+            Age: r.camperAge || "",
+            Gender: r.gender || "",
+            "T-Shirt": r.tshirtSize || "",
+            Parent: r.parentName || "",
+            "Parent Email": r.parentEmail || "",
+            "Parent Phone": r.parentPhone || "",
+            "Emergency Contact": formatEmergencyContact(r),
+            Notes: r.notes || "",
+            "Registered On": formatDate(r.submittedAt),
+            Paid: r.paid ? "Paid" : "Unpaid"
+          };
+        });
+
+        const volRows = volSnap.docs.map((d) => {
+          const v = d.data();
+          return {
+            Name: v.name || "",
+            Email: v.email || "",
+            Phone: v.phone || "",
+            Role: v.role || "",
+            Notes: v.notes || "",
+            "Signed Up On": formatDate(v.submittedAt)
+          };
+        });
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(regRows), "Registrations");
+        XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(volRows), "Volunteers");
+
+        const dateStr = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(workbook, `ewing-woods-camp-export-${dateStr}.xlsx`);
+        exportStatus.textContent = "Export downloaded.";
+      } catch (err) {
+        exportStatus.textContent = "Could not export: " + (err.message || "unknown error");
+      } finally {
+        exportBtn.disabled = false;
+      }
+    });
 
     async function loadRegistrations() {
       try {
