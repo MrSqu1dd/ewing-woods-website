@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteer | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="schedule.html">Schedule</a></li>
+      <li><a href="parent-login.html">Register</a></li>
+      <li><a href="rules.html">Camp Rules</a></li>
+      <li><a class="active" href="volunteer.html">Volunteer</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-header">
+    <h1>Volunteer</h1>
+    <p>Camp only happens because people like you help make it happen.</p>
+    <div class="wave-divider">
+      <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,20 C240,50 480,0 720,20 C960,40 1200,10 1440,30 L1440,60 L0,60 Z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <main>
+    <p class="reveal">
+      There are lots of ways to pitch in before and during camp week. Pick a role below and sign up —
+      we'll follow up with details.
+    </p>
+
+    <form id="volunteer-form" class="reveal">
+      <label for="name">Your name</label>
+      <input type="text" id="name" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" required>
+
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" required>
+
+      <label for="role">Which role would you like to volunteer for?</label>
+      <select id="role" required>
+        <option value="">Select a role</option>
+      </select>
+
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="3"></textarea>
+
+      <button type="submit" class="btn">Sign Up to Volunteer</button>
+    </form>
+    <p id="form-status" role="status"></p>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp &middot; <a href="admin-login.html">Staff Login</a></p>
+  </footer>
+
+  <script src="scripts.js"></script>
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const DEFAULT_ROLES = ["Camp Clean Up", "Cooking for the Week", "Food Donations"];
+
+    const form = document.getElementById("volunteer-form");
+    const roleSelect = document.getElementById("role");
+    const status = document.getElementById("form-status");
+
+    (async () => {
+      let roles = DEFAULT_ROLES;
+      try {
+        const snap = await getDoc(doc(db, "siteContent", "volunteerRoles"));
+        if (snap.exists() && Array.isArray(snap.data().roles) && snap.data().roles.length > 0) {
+          roles = snap.data().roles;
+        }
+      } catch (err) {
+        // Fall back to default roles shown in the HTML if this fails.
+      }
+      roles.forEach((role) => {
+        const option = document.createElement("option");
+        option.value = role;
+        option.textContent = role;
+        roleSelect.appendChild(option);
+      });
+    })();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      status.textContent = "Submitting...";
+      try {
+        await addDoc(collection(db, "volunteers"), {
+          name: document.getElementById("name").value.trim(),
+          email: document.getElementById("email").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+          role: roleSelect.value,
+          notes: document.getElementById("notes").value.trim(),
+          submittedAt: serverTimestamp()
+        });
+        form.reset();
+        status.textContent = "Thanks for signing up! We'll be in touch.";
+      } catch (err) {
+        status.textContent = "Something went wrong submitting your signup. Please try again or contact us.";
+      }
+    });
+  </script>
+</body>
+</html>

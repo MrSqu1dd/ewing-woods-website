@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteers | Ewing Woods Youth Camp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="index.html">Ewing Woods Youth Camp</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="admin.html">Registrations</a></li>
+      <li><a class="active" href="manage-volunteers.html">Volunteers</a></li>
+      <li id="manage-staff-nav-item" style="display: none;"><a href="manage-staff.html">Manage Staff</a></li>
+      <li id="manage-schedule-nav-item" style="display: none;"><a href="manage-schedule.html">Edit Schedule</a></li>
+      <li id="manage-about-nav-item" style="display: none;"><a href="manage-about.html">Edit About</a></li>
+      <li><a href="#" id="logout-link">Log Out</a></li>
+    </ul>
+  </nav>
+
+  <main class="wide">
+    <h1>Volunteers</h1>
+    <p id="role-banner" class="info-box" style="display: none;"></p>
+
+    <div id="roles-editor-section" style="display: none;">
+      <h2>Volunteer Roles</h2>
+      <p>These are the roles people can choose from when they sign up to volunteer.</p>
+      <div id="roles-list"></div>
+      <button id="add-role-btn" class="toggle-btn" style="margin-top: 1rem;">+ Add Role</button>
+      <button id="save-roles-btn" class="btn" style="margin-top: 1rem; margin-left: 0.5rem;">Save Roles</button>
+      <p id="roles-status" role="status"></p>
+    </div>
+
+    <h2>Volunteer Signups</h2>
+    <p id="status">Loading...</p>
+    <div class="data-table-wrap">
+      <table id="volunteers-table" style="display: none;">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Notes</th>
+            <th>Signed Up On</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="volunteers-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Ewing Woods Youth Camp</p>
+  </footer>
+
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import {
+      doc, getDoc, setDoc, collection, getDocs, deleteDoc, orderBy, query
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    const DEFAULT_ROLES = ["Camp Clean Up", "Cooking for the Week", "Food Donations"];
+
+    const roleBanner = document.getElementById("role-banner");
+    const rolesEditorSection = document.getElementById("roles-editor-section");
+    const rolesList = document.getElementById("roles-list");
+    const addRoleBtn = document.getElementById("add-role-btn");
+    const saveRolesBtn = document.getElementById("save-roles-btn");
+    const rolesStatus = document.getElementById("roles-status");
+
+    const statusEl = document.getElementById("status");
+    const table = document.getElementById("volunteers-table");
+    const tbody = document.getElementById("volunteers-body");
+
+    const rolesDocRef = doc(db, "siteContent", "volunteerRoles");
+
+    let isAdmin = false;
+
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      window.location.href = "admin-login.html";
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const role = await getStaffRole(user);
+      if (!role) {
+        statusEl.textContent = "Your account doesn't have access to this dashboard. Contact the camp director if this seems wrong.";
+        await signOut(auth);
+        return;
+      }
+
+      isAdmin = role === "admin";
+      roleBanner.textContent = isAdmin
+        ? "You're signed in as an admin. You can manage roles and remove volunteers."
+        : "You're signed in as staff. You have view-only access to volunteers.";
+      roleBanner.style.display = "block";
+
+      if (isAdmin) {
+        document.getElementById("manage-staff-nav-item").style.display = "list-item";
+        document.getElementById("manage-schedule-nav-item").style.display = "list-item";
+        document.getElementById("manage-about-nav-item").style.display = "list-item";
+        rolesEditorSection.style.display = "block";
+        await loadRoles();
+      }
+
+      await loadVolunteers();
+    });
+
+    async function getStaffRole(user) {
+      try {
+        const snap = await getDoc(doc(db, "staffRoles", user.email.toLowerCase()));
+        return snap.exists() ? snap.data().role : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function loadRoles() {
+      const snap = await getDoc(rolesDocRef);
+      const roles = snap.exists() && Array.isArray(snap.data().roles) && snap.data().roles.length > 0
+        ? snap.data().roles
+        : DEFAULT_ROLES;
+
+      rolesList.innerHTML = "";
+      roles.forEach((role) => addRoleRow(role));
+    }
+
+    function addRoleRow(value) {
+      const rowDiv = document.createElement("div");
+      rowDiv.style.display = "flex";
+      rowDiv.style.gap = "0.5rem";
+      rowDiv.style.marginTop = "0.5rem";
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = value || "";
+      input.className = "role-name-input";
+      input.style.flex = "1";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "danger-btn";
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => rowDiv.remove());
+
+      rowDiv.appendChild(input);
+      rowDiv.appendChild(removeBtn);
+      rolesList.appendChild(rowDiv);
+    }
+
+    addRoleBtn.addEventListener("click", () => addRoleRow(""));
+
+    saveRolesBtn.addEventListener("click", async () => {
+      rolesStatus.textContent = "Saving...";
+      const roles = Array.from(rolesList.querySelectorAll(".role-name-input"))
+        .map((input) => input.value.trim())
+        .filter((value) => value !== "");
+      try {
+        await setDoc(rolesDocRef, { roles }, { merge: true });
+        rolesStatus.textContent = "Saved.";
+      } catch (err) {
+        rolesStatus.textContent = "Could not save: " + (err.message || "unknown error");
+      }
+    });
+
+    async function loadVolunteers() {
+      try {
+        const q = query(collection(db, "volunteers"), orderBy("submittedAt", "desc"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          statusEl.textContent = "No volunteer signups yet.";
+          return;
+        }
+
+        tbody.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const v = docSnap.data();
+          const row = document.createElement("tr");
+
+          [v.name, v.email, v.phone, v.role, v.notes, formatDate(v.submittedAt)].forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = value ?? "";
+            row.appendChild(td);
+          });
+
+          const actionsCell = document.createElement("td");
+          if (isAdmin) {
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "danger-btn";
+            removeBtn.textContent = "Remove";
+            removeBtn.addEventListener("click", async () => {
+              const label = v.name || "this volunteer";
+              if (!window.confirm(`Remove ${label} from the volunteer list? This cannot be undone.`)) return;
+              removeBtn.disabled = true;
+              try {
+                await deleteDoc(docSnap.ref);
+                await loadVolunteers();
+              } catch (err) {
+                removeBtn.disabled = false;
+              }
+            });
+            actionsCell.appendChild(removeBtn);
+          } else {
+            actionsCell.textContent = "—";
+          }
+          row.appendChild(actionsCell);
+
+          tbody.appendChild(row);
+        });
+
+        statusEl.style.display = "none";
+        table.style.display = "table";
+      } catch (err) {
+        statusEl.textContent = "Could not load volunteers. Check your connection and permissions.";
+      }
+    }
+
+    function formatDate(timestamp) {
+      if (!timestamp || typeof timestamp.toDate !== "function") return "—";
+      return timestamp.toDate().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    }
+  </script>
+</body>
+</html>
